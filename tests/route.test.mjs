@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compute, prises } from '../js/route.js';
+import { PATCHES, rj45Nodal, cordonsParPatch } from '../js/baies.js';
+import { NOMS_DEFAUT } from '../js/data.js';
 
 const base = (inputs = [], outputs = [], net = []) => ({ inputs, outputs, net, settings: { names: {}, dm7OutStart: 1 } });
 
@@ -77,5 +79,20 @@ test('sorties : XT1 sur BAV-23 HP-01 → matrice 2 sortie 1, Dante Out séquenti
 test('RTP MIDI : BAV-24 réservé aux Rio', () => {
   assert.ok(!prises('ETH').some(p => p.bav === 'BAV-24'));
   const r = compute(base([], [], [{ id: 'n', nom: 'MIDI', prise: 'BAV-20:ETH-01' }])).net[0];
-  assert.ok(r.steps.some(s => /switch de contrôle/.test(s.txt)));
+  assert.ok(r.steps.some(s => /switch Contrôle 1/.test(s.txt)));
+  assert.deepEqual(r.nodal, { patch: 'N-C', point: 'C1' });
+});
+
+test('baies : Ghielmetti 2 conforme au synoptique', () => {
+  const p = PATCHES.G2.points;
+  assert.equal(p.A29, 6049); assert.equal(p.B29, 6001); assert.equal(p.B1, 6149); assert.equal(p.B23, 6171);
+  assert.equal(p.A17, 6117); assert.equal(p.B48, 6196); assert.equal(p.A15, undefined);
+  assert.deepEqual(rj45Nodal(4073), { patch: 'N-D', point: 'D1' });
+});
+
+test('baies : cordons du kick sur G1 et G2', () => {
+  const res = compute(base([{ id: 'a', n: 1, source: 'Kick', route: 'bav', prise: 'BAV-20:AUD-01' }]));
+  const c = cordonsParPatch(res, NOMS_DEFAUT);
+  assert.deepEqual([c.G1[0].a, c.G1[0].b], ['A21', 'B1']);
+  assert.deepEqual([c.G2[0].a, c.G2[0].b], ['A29', 'B1']);
 });

@@ -1,6 +1,8 @@
 import { BOITIERS, MICROS, NOMS_DEFAUT } from './data.js';
 import { compute, prises, phantomDe, micro } from './route.js';
 import { LEARN_HTML } from './learn.js';
+import { renderBaies } from './baies.js';
+let baie = 'nodal';
 
 const KEY = 'patch-auditorium-v1';
 const $ = s => document.querySelector(s);
@@ -223,6 +225,7 @@ function renderFiches() {
 function renderAll() {
   $('#artist').value = state.show.artist || ''; $('#date').value = state.show.date || '';
   renderUsage(); renderInputs(); renderOutputs(); renderNet(); renderFiches(); renderPanel();
+  renderBaies(document.getElementById('tab-baies'), res, names(), baie);
 }
 
 // ---------------------------------------------------------------- événements
@@ -246,6 +249,8 @@ document.addEventListener('change', ev => {
 document.addEventListener('click', ev => {
   const t = ev.target;
   if (t.matches('[data-zoom]')) { $('#imgEl').src = t.src; $('#img').showModal(); return; }
+  const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; renderBaies(document.getElementById('tab-baies'), res, names(), baie); return; }
+  const go = t.closest('[data-goto]'); if (go) { const el = document.getElementById('patch-' + go.dataset.goto); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
   const [list, i] = listOf(t); if (!list) return;
   const item = list[i];
   if (t.dataset.route) { item.route = t.dataset.route; if (item.route === 'hf' && item.mic && micro(item.mic)?.phantom !== 'hf') item.mic = null; update(); return; }

@@ -15,15 +15,17 @@ Site statique HTML + JS (pas de build), même principe que Salle 3D. Accès par 
 | `js/data.js` | l'installation : boîtiers, numéros de câbles, Ghielmetti, liaisons, Rio, matrices, parc micros |
 | `js/route.js` | le calcul des chemins (fonction pure, testée) |
 | `js/app.js` | l'interface |
+| `js/baies.js` | l'onglet « Baies » : racks nodal / régie et patchs dessinés point par point avec les cordons du jour |
 | `js/learn.js` | l'onglet « Comprendre » (schéma + Dante) |
 | `boitiers/` | plaques et tableaux de circuits des boîtiers, repris de Salle 3D |
 | `tests/` | `npm test` |
 
 ## Données à vérifier sur place
 
-Source : synoptique LGS2-INE-EXE-22-SCH-AUD-TN-8001, indice 0. Marqués `verifier: true` :
-BAV-21, BAV-22 et BAV-06 (numéros de câbles), la répartition des prises HP entre les trois
-MA-4.600, et la liaison entre les switchs de contrôle du nodal et de la régie.
+Source : synoptique LGS2-INE-EXE-22-SCH-AUD-TN-8001, indice 0, photo de la baie nodal et
+tableau « Régies Auditorium ». Marqués `verifier: true` : BAV-21 et BAV-22 (numéros de câbles).
+À confirmer aussi : la liaison entre les switchs Contrôle 1 (nodal) et Contrôle 2 (régie), et
+les hauteurs exactes des modules de la baie nodal.
 
 ## Déployer
 

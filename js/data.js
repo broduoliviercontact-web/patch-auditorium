@@ -51,7 +51,7 @@ export const BOITIERS = {
   'BAV-28': { loc: 'Plateau lointain cour', zone: 'plateau', pos: [-89.19, -3.58], plaque: 'plaque_16.png',
     aud: range(6025, 4), eth: range(4089, 6), hp: [5017, 5018] },
   'BAV-06': { loc: 'Lisse face scène (porteuse)', zone: 'plateau', pos: [-83.51, 2.73], plaque: 'plaque_25.png',
-    aud: range(6013, 4), verifier: true },
+    aud: range(6013, 4), eth: [4013, 4014] },
   'BAV-15': { loc: 'Salle de musique', zone: 'autre', pos: [-70.44, -8.67], plaque: 'plaque_23.png',
     aud: range(6017, 4) },
   'BAV-01': { loc: 'Niveau R2, côté jardin', zone: 'autre', pos: [-66.81, 9.76], plaque: 'plaque_22.png',
@@ -75,7 +75,7 @@ export const RIO_PLATEAU = {
 };
 
 // Prises HP (Speakon) des boîtiers -> matrices amplifiées Fohhn MA-4.600 (au nodal).
-// Répartition par matrice lue sur le plan, à confirmer au nodal.
+// Répartition par matrice lue sur le synoptique (MA-4.600 n°1 : 5007-5010, n°2 : 5011-5014, n°3 : 5015-5018).
 export const MATRICES = [
   { id: 1, ip: 4533, cables: range(5007, 4) },
   { id: 2, ip: 4534, cables: range(5011, 4) },

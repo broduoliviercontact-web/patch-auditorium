@@ -4,6 +4,7 @@ import {
   BOITIERS, G1, G2, LIAISONS, RIO_REGIE_IN, DM7_LOCAL_IN, RIO_PLATEAU, MATRICES, matriceDe,
   MICROS, devinePhantom, NOMS_DEFAUT,
 } from './data.js';
+import { rj45Nodal } from './baies.js';
 
 export const priseId = (bav, kind, i) => `${bav}:${kind}-${String(i + 1).padStart(2, '0')}`;
 
@@ -178,11 +179,10 @@ export function compute(state) {
         if (o.type === 'xt1' && qte > 2) r.warnings.push(`${qte} XT1 (16 Ω) en parallèle = ${(16 / qte).toFixed(1)} Ω : vérifie l'impédance minimale de la MA-4.600.`);
         if (mm) {
           const dev = N['ma' + mm.m];
-          r.steps.push({ lieu: 'Nodal', txt: `Le câble ${p.cable} est alimenté par la matrice Fohhn MA-4.600 n°${mm.m}, sortie ${mm.sortie} (répartition à confirmer au nodal).` });
+          r.steps.push({ lieu: 'Nodal', txt: `Le câble ${p.cable} est alimenté par la matrice Fohhn MA-4.600 n°${mm.m}, sortie ${mm.sortie}.` });
           r.steps.push({ lieu: 'Dante', txt: `Dante Controller : coche ${dev} canal ${mm.sortie} (récepteur) × ${N.dm7} canal ${dmOut} (émetteur). Dans Fohhn Audio Soft, vérifie que l'entrée Dante ${mm.sortie} part bien sur la sortie ${mm.sortie}.` });
           const sub = { rxDev: dev, rxCh: mm.sortie, txDev: N.dm7, txCh: dmOut, label: r.nom };
           res.dante.push(sub);
-          r.warnings.push('Répartition des prises HP entre les 3 matrices lue sur le plan : à confirmer.');
         }
       }
     } else {
@@ -209,11 +209,13 @@ export function compute(state) {
       if (usedEth.has(p.id)) { r.ok = false; r.warnings.push(`${p.bav} ${p.nom} est déjà utilisée.`); }
       usedEth.add(p.id);
       r.steps.push({ lieu: 'Plateau', bav: p.bav, txt: `${p.bav} (${p.loc}) : branche l'ordinateur de l'artiste sur ${p.nom}. Câble n° ${p.cable}.` });
-      r.steps.push({ lieu: 'Nodal', txt: `Patch RJ45 : repère l'arrivée du câble ${p.cable} et pose un cordon vers le switch de contrôle du nodal. Jamais vers P1 ou S1 : ce sont les switchs Dante.` });
-      r.steps.push({ lieu: 'Régie', txt: `Branche ton ordinateur sur le switch de contrôle de la régie.` });
+      const nd = rj45Nodal(p.cable); r.nodal = nd;
+      const ou = nd ? `patch RJ45 ${nd.patch.slice(2)}, port ${nd.point}` : `l'arrivée du câble ${p.cable}`;
+      r.steps.push({ lieu: 'Nodal', txt: `Le câble ${p.cable} arrive sur le ${ou}. Pose un cordon de ce port vers un port libre du switch Contrôle 1. Jamais vers P1 ou S1 : ce sont les switchs Dante.` });
+      r.steps.push({ lieu: 'Régie', txt: `Branche ton ordinateur sur un port libre du switch Contrôle 2 (baie régie, U33).` });
       r.steps.push({ lieu: 'Réglages', txt: `Mets les deux ordinateurs sur la même plage d'adresses IP. Sur Mac : Configuration audio et MIDI → fenêtre MIDI → Réseau, crée une session et connecte-toi à l'autre. Sur Windows : logiciel rtpMIDI.` });
       r.warnings.push('Liaison entre les switchs de contrôle du nodal et de la régie à confirmer.');
-      res.cordons.rj45.push({ source: r.nom, txt: `câble ${p.cable} → switch de contrôle` });
+      res.cordons.rj45.push({ source: r.nom, txt: `${nd ? nd.point + ' (câble ' + p.cable + ')' : 'câble ' + p.cable} → switch Contrôle 1` });
     }
     res.net.push(r);
   });

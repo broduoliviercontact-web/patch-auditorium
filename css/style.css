@@ -96,3 +96,13 @@ dialog h2 { margin-top:0; }
   .print-head { display:block !important; }
 }
 .print-head { display:none; font-size:16px; font-weight:700; margin-bottom:8px; }
+.baies { display:grid; grid-template-columns:300px minmax(0,1fr); gap:18px; align-items:start; }
+.baies h3 { margin:0 0 8px; font-size:14px; }
+.rackcol { position:sticky; top:120px; } .rack { width:100%; height:auto; }
+.patchcard { background:var(--bg2); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:14px; scroll-margin-top:120px; }
+.patchcard .scroll { overflow-x:auto; padding-bottom:4px; }
+.cordlist { border-collapse:collapse; font-size:13px; margin-top:6px; }
+.cordlist td { padding:3px 10px 3px 0; }
+.dot { display:inline-block; width:12px; height:12px; border-radius:50%; }
+@media (max-width:800px) { .baies { grid-template-columns:1fr; } .rackcol { position:static; } }
+.patchcard summary { cursor:pointer; font-size:14px; } details.patchcard[open] summary { margin-bottom:8px; }
