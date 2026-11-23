@@ -5,6 +5,7 @@ import {
   MICROS, devinePhantom, NOMS_DEFAUT,
 } from './data.js';
 import { rj45Nodal } from './baies.js';
+import { ZONES, SYS_RX } from './diffusion.js';
 
 export const priseId = (bav, kind, i) => `${bav}:${kind}-${String(i + 1).padStart(2, '0')}`;
 
@@ -158,31 +159,38 @@ export function compute(state) {
   }
 
   // ---------- Sorties ----------
-  let dOut = +(state.settings?.dm7OutStart) || 1;
+  // Une sortie branchée sur une prise HP déjà prévue par la diffusion système (front fills,
+  // retours) reprend le bus et le Dante Out du système. Sinon : un Dante Out libre.
+  const sysOuts = new Set(ZONES.map(z => z.out));
+  let dOut = +(state.settings?.dm7OutStart) || 9;
+  const nextOut = () => { while (sysOuts.has(dOut)) dOut++; return dOut++; };
   const usedHP = new Map(), usedRioOut = { 1: new Set(), 2: new Set() };
   (state.outputs || []).forEach((o, idx) => {
     const r = { id: o.id, nom: o.nom || `Sortie ${idx + 1}`, steps: [], warnings: [], ok: true };
     const qte = Math.max(1, +o.qte || 1);
-    const dmOut = dOut++;
-    r.dm7Out = dmOut;
-    r.steps.push({ lieu: 'DM7', txt: `Patch de sortie : ${o.mix || 'le mix ' + r.nom} → Dante Out ${dmOut}.` });
-    res.dm7.push({ n: 'S' + (idx + 1), source: r.nom, txt: `${o.mix || 'Mix ' + r.nom} → Dante Out ${dmOut}` });
+    const p = (o.route || 'hp') === 'hp' && o.prise ? priseParId('HP', o.prise) : null;
+    const mm = p && matriceDe(p.cable);
+    const zone = mm && SYS_RX[`ma${mm.m}:${mm.sortie}`];
+    const dmOut = zone ? zone.out : nextOut();
+    const bus = zone ? zone.bus : (o.mix || 'le mix ' + r.nom);
+    r.dm7Out = dmOut; r.zone = zone;
+    r.steps.push({ lieu: 'DM7', txt: zone
+      ? `Cette prise fait partie de la diffusion système « ${zone.nom} » : ${zone.bus} → Dante Out ${dmOut}${zone.retour ? `. Prépare le mix de l'artiste dans ${zone.bus}` : ''}.`
+      : `Patch de sortie : ${bus} → Dante Out ${dmOut}.` });
+    if (!zone) res.dm7.push({ n: 'S' + (idx + 1), source: r.nom, txt: `${bus} → Dante Out ${dmOut}` });
     if ((o.route || 'hp') === 'hp') {
-      const p = o.prise && priseParId('HP', o.prise);
       if (!p) { r.ok = false; r.warnings.push('Choisis une prise HP (Speakon) sur un boîtier.'); }
       else {
-        if (usedHP.has(p.id)) { r.ok = false; r.warnings.push(`La prise ${p.bav} ${p.nom} est déjà utilisée par « ${usedHP.get(p.id)} ». Pour des XT1, chaîne-les plutôt (LOOP THRU) dans la même ligne.`); }
+        if (usedHP.has(p.id)) { r.ok = false; r.warnings.push(`La prise ${p.bav} ${p.nom} est déjà utilisée par « ${usedHP.get(p.id)} ».`); }
         usedHP.set(p.id, r.nom);
-        const mm = matriceDe(p.cable);
         const type = o.type === 'xt1' ? 'XT1' : o.type === 'xt22' ? 'XT22' : 'enceinte passive';
         r.steps.push({ lieu: 'Plateau', bav: p.bav, txt: `${p.bav} (${p.loc}) : branche ${qte > 1 ? qte + ' ' + type + ' chaînées (LOOP THRU) ' : 'la ' + type + ' '}en Speakon sur ${p.nom}. Câble n° ${p.cable}.` });
-        if (o.type === 'xt1' && qte > 2) r.warnings.push(`${qte} XT1 (16 Ω) en parallèle = ${(16 / qte).toFixed(1)} Ω : vérifie l'impédance minimale de la MA-4.600.`);
+        if (o.type === 'xt1' && qte > 1) r.warnings.push(`Le synoptique prévoit un XT1 par prise HP (8 prises pour 8 XT1) : chaîner n'est utile que s'il manque des prises.${qte > 2 ? ` ${qte} XT1 (16 Ω) en parallèle = ${(16 / qte).toFixed(1)} Ω : vérifie l'impédance minimale de la MA-4.600.` : ''}`);
         if (mm) {
           const dev = N['ma' + mm.m];
           r.steps.push({ lieu: 'Nodal', txt: `Le câble ${p.cable} est alimenté par la matrice Fohhn MA-4.600 n°${mm.m}, sortie ${mm.sortie}.` });
-          r.steps.push({ lieu: 'Dante', txt: `Dante Controller : coche ${dev} canal ${mm.sortie} (récepteur) × ${N.dm7} canal ${dmOut} (émetteur). Dans Fohhn Audio Soft, vérifie que l'entrée Dante ${mm.sortie} part bien sur la sortie ${mm.sortie}.` });
-          const sub = { rxDev: dev, rxCh: mm.sortie, txDev: N.dm7, txCh: dmOut, label: r.nom };
-          res.dante.push(sub);
+          r.steps.push({ lieu: 'Dante', txt: `Dante Controller : coche ${dev} canal ${mm.sortie} (récepteur) × ${N.dm7} canal ${dmOut} (émetteur)${zone ? ' : case déjà cochée par la diffusion système' : ''}. Dans Fohhn Audio Soft, vérifie que l'entrée Dante ${mm.sortie} part bien sur la sortie ${mm.sortie}.` });
+          res.dante.push({ rxDev: dev, rxCh: mm.sortie, txDev: N.dm7, txCh: dmOut, label: r.nom, sys: !!zone });
         }
       }
     } else {

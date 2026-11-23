@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { compute, prises } from '../js/route.js';
 import { PATCHES, rj45Nodal, cordonsParPatch } from '../js/baies.js';
 import { NOMS_DEFAUT } from '../js/data.js';
+import { subscriptions } from '../js/dante.js';
 
-const base = (inputs = [], outputs = [], net = []) => ({ inputs, outputs, net, settings: { names: {}, dm7OutStart: 1 } });
+const base = (inputs = [], outputs = [], net = []) => ({ inputs, outputs, net, settings: { names: {}, dm7OutStart: 9 } });
 
 test('kick sur BAV-20 AUD-01 : nodal A21 → B1, régie A29 → B1, Rio régie 1', () => {
   const r = compute(base([{ id: 'a', n: 1, source: 'Kick', route: 'bav', prise: 'BAV-20:AUD-01' }])).inputs[0];
@@ -67,13 +68,15 @@ test('prise utilisée deux fois = erreur', () => {
   assert.equal(res.inputs[1].ok, false);
 });
 
-test('sorties : XT1 sur BAV-23 HP-01 → matrice 2 sortie 1, Dante Out séquentiel', () => {
+test('sorties : retour XT22 sur BAV-26 HP-01 → diffusion système (Mix 1, Dante Out 9) ; enceinte active sur Rio → Out 13', () => {
   const res = compute(base([], [
-    { id: 'o1', nom: 'Retour', type: 'xt22', route: 'hp', prise: 'BAV-20:HP-02' },
-    { id: 'o2', nom: 'Front', type: 'xt1', qte: 4, route: 'hp', prise: 'BAV-23:HP-01' },
+    { id: 'o1', nom: 'Retour chant', type: 'xt22', route: 'hp', prise: 'BAV-26:HP-01' },
+    { id: 'o2', nom: 'Sub artiste', type: 'actif', route: 'rio' },
+    { id: 'o3', nom: 'Front', type: 'xt1', qte: 4, route: 'hp', prise: 'BAV-23:HP-01' },
   ]));
-  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA4600-1', 2, 1], ['MA4600-2', 1, 2]]);
-  assert.ok(res.outputs[1].warnings.some(w => /impédance/.test(w)));
+  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA4600-3', 1, 9], ['Rio-Plateau-1', 1, 13], ['MA4600-2', 1, 4]]);
+  assert.equal(res.outputs[0].zone.bus, 'Mix 1');
+  assert.ok(res.outputs[2].warnings.some(w => /impédance/.test(w)));
 });
 
 test('RTP MIDI : BAV-24 réservé aux Rio', () => {
@@ -95,4 +98,15 @@ test('baies : cordons du kick sur G1 et G2', () => {
   const c = cordonsParPatch(res, NOMS_DEFAUT);
   assert.deepEqual([c.G1[0].a, c.G1[0].b], ['A21', 'B1']);
   assert.deepEqual([c.G2[0].a, c.G2[0].b], ['A29', 'B1']);
+});
+
+test('dante : diffusion système + patch, conflit détecté en entraînement', () => {
+  const res = compute(base([{ id: 'a', n: 1, source: 'Kick', route: 'rio' }], [{ id: 'o', nom: 'Retour', type: 'xt22', route: 'hp', prise: 'BAV-26:HP-01' }]));
+  const subs = subscriptions(res, NOMS_DEFAUT);
+  assert.equal(subs.filter(s => s.src === 'sys').length, 21); // 2+2+4+8+1+4
+  assert.ok(subs.some(s => s.src === 'patch' && s.tx === 'rio1' && s.rx === 'dm7' && s.rxCh === 1));
+  assert.ok(!subs.some(s => s.conflict));
+  const t = subscriptions(res, NOMS_DEFAUT, { add: ['rio1:5>dm7:1'], off: ['dm7:3>di4:4'] });
+  assert.equal(t.filter(s => s.conflict).length, 2);
+  assert.ok(!t.some(s => s.key === 'dm7:3>di4:4'));
 });

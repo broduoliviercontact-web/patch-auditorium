@@ -15,6 +15,8 @@ Site statique HTML + JS (pas de build), même principe que Salle 3D. Accès par 
 | `js/data.js` | l'installation : boîtiers, numéros de câbles, Ghielmetti, liaisons, Rio, matrices, parc micros |
 | `js/route.js` | le calcul des chemins (fonction pure, testée) |
 | `js/app.js` | l'interface |
+| `js/diffusion.js` | appareils Dante et diffusion de salle (zones, bus DM7, Dante Out, récepteurs) |
+| `js/dante.js` | l'onglet « Dante » : Dante Controller simulé, explications par case, mode entraînement |
 | `js/baies.js` | l'onglet « Baies » : racks nodal / régie et patchs dessinés point par point avec les cordons du jour |
 | `js/learn.js` | l'onglet « Comprendre » (schéma + Dante) |
 | `boitiers/` | plaques et tableaux de circuits des boîtiers, repris de Salle 3D |

@@ -1,7 +1,11 @@
-import { BOITIERS, MICROS, NOMS_DEFAUT } from './data.js';
+import { BOITIERS, MICROS, NOMS_DEFAUT, NOMS_LIBELLES } from './data.js';
 import { compute, prises, phantomDe, micro } from './route.js';
 import { LEARN_HTML } from './learn.js';
 import { renderBaies } from './baies.js';
+import { renderDante, explain, cellKey } from './dante.js';
+import { ZONES } from './diffusion.js';
+const dui = { expTx: new Set(), expRx: new Set(), show: { sys: true, patch: true }, usedOnly: true, train: false, focus: null };
+let danteCell = null, lastSubs = [];
 let baie = 'nodal';
 
 const KEY = 'patch-auditorium-v1';
@@ -9,10 +13,11 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-const vide = () => ({ show: { artist: '', date: new Date().toISOString().slice(0, 10) }, inputs: [], outputs: [], net: [], settings: { names: {}, dm7OutStart: 1 } });
+const vide = () => ({ train: { add: [], off: [] }, show: { artist: '', date: new Date().toISOString().slice(0, 10) }, inputs: [], outputs: [], net: [], settings: { names: {}, dm7OutStart: 9 } });
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || vide(); } catch { state = vide(); }
-state.settings ||= { names: {}, dm7OutStart: 1 };
+state.settings ||= { names: {}, dm7OutStart: 9 };
+state.train ||= { add: [], off: [] };
 let res = compute(state);
 let openId = null;          // ligne affichée dans le panneau
 const openSetup = new Set(); // lignes dont le « setup » est déplié
@@ -184,7 +189,9 @@ function miniPlan(bav) {
   return s + `</svg>`;
 }
 
+function renderDanteTab() { lastSubs = renderDante(document.getElementById('tab-dante'), res, names(), dui, state.train); }
 function renderPanel() {
+  if (!openId && danteCell) { $('#panelBody').innerHTML = explain(danteCell, lastSubs, res, names()); $('#panel').hidden = false; return; }
   if (!openId) { $('#panel').hidden = true; return; }
   const all = [...res.inputs.map(r => ({ r, kind: 'in' })), ...res.outputs.map(r => ({ r, kind: 'out' })), ...res.net.map(r => ({ r, kind: 'net' }))];
   const f = all.find(x => x.r.id === openId);
@@ -216,6 +223,7 @@ function renderFiches() {
     <h3>Nodal : cordons Ghielmetti 1</h3>${table(['N°', 'Source', 'De', 'Vers', ''], res.cordons.nodal.map(c => [c.n, c.source, c.de, c.vers, c.txt]))}
     <h3>Régie : cordons Ghielmetti 2</h3>${table(['N°', 'Source', 'De', 'Vers', ''], res.cordons.regie.map(c => [c.n, c.source, c.de, c.vers, c.txt]))}
     <h3>Abonnements Dante (Dante Controller)</h3>${table(['Récepteur', 'Canal', '←', 'Émetteur', 'Canal', 'Pour'], res.dante.map(d => [d.rxDev, d.rxCh, '←', d.txDev, d.txCh, d.label]))}
+    <h3>Diffusion système (fixe)</h3>${table(['Zone', 'Bus DM7', 'Dante Out', 'Récepteurs', 'Enceintes'], ZONES.map(z => [z.nom, `${z.src} → ${z.bus}`, z.out, z.rx.map(([d, c]) => `${N[d]} ${c}`).join(', '), z.hp]))}
     <h3>DM7 : patch</h3>${table(['N°', 'Source', 'Patch'], res.dm7.map(d => [d.n, d.source, d.txt]))}
     <h3>Fantôme 48 V</h3>${table(['N°', 'Source', 'Où l\'activer'], res.phantom.map(p => [p.n, p.source, p.ou]))}
     <h3>Sorties</h3>${table(['Sortie', 'Branchement'], res.outputs.map(o => [o.nom, o.steps.find(s => s.lieu === 'Plateau')?.txt || '']))}
@@ -226,6 +234,7 @@ function renderAll() {
   $('#artist').value = state.show.artist || ''; $('#date').value = state.show.date || '';
   renderUsage(); renderInputs(); renderOutputs(); renderNet(); renderFiches(); renderPanel();
   renderBaies(document.getElementById('tab-baies'), res, names(), baie);
+  renderDanteTab();
 }
 
 // ---------------------------------------------------------------- événements
@@ -249,6 +258,7 @@ document.addEventListener('change', ev => {
 document.addEventListener('click', ev => {
   const t = ev.target;
   if (t.matches('[data-zoom]')) { $('#imgEl').src = t.src; $('#img').showModal(); return; }
+  if (danteClick(t)) return;
   const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; renderBaies(document.getElementById('tab-baies'), res, names(), baie); return; }
   const go = t.closest('[data-goto]'); if (go) { const el = document.getElementById('patch-' + go.dataset.goto); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
   const [list, i] = listOf(t); if (!list) return;
@@ -257,11 +267,43 @@ document.addEventListener('click', ev => {
   const act = t.dataset.act;
   if (act === 'ph') { item.phantom = item.phantom == null ? !phantomDe(item).on : item.phantom === true ? false : null; update(); }
   if (act === 'setup') { openSetup.has(item.id) ? openSetup.delete(item.id) : openSetup.add(item.id); renderInputs(); }
-  if (act === 'open') { openId = item.id; renderPanel(); }
+  if (act === 'open') { openId = item.id; danteCell = null; renderPanel(); }
   if (act === 'del') { list.splice(i, 1); if (openId === item.id) openId = null; update(); }
 });
-$('#panelClose').onclick = () => { openId = null; renderPanel(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && openId) { openId = null; renderPanel(); } });
+$('#panelClose').onclick = () => { openId = null; danteCell = null; renderPanel(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { openId = null; danteCell = null; renderPanel(); } });
+
+function danteClick(t) {
+  const tx = t.closest('[data-tx]'), rx = t.closest('[data-rx]');
+  if (tx) { const k = tx.dataset.tx; dui.expTx.has(k) ? dui.expTx.delete(k) : dui.expTx.add(k); renderDanteTab(); return true; }
+  if (rx) { const k = rx.dataset.rx; dui.expRx.has(k) ? dui.expRx.delete(k) : dui.expRx.add(k); renderDanteTab(); return true; }
+  const z = t.closest('[data-zone]');
+  if (z) {
+    dui.focus = dui.focus === z.dataset.zone ? null : z.dataset.zone;
+    if (dui.focus) { dui.expTx.add('dm7'); ZONES.filter(x => x.id === dui.focus || (dui.focus === 'retours' && x.retour)).forEach(x => x.rx.forEach(([d]) => dui.expRx.add(d))); }
+    renderDanteTab(); return true;
+  }
+  if (t.closest('[data-dreset]')) { state.train = { add: [], off: [] }; save(); renderDanteTab(); return true; }
+  const c = t.closest('[data-cell]');
+  if (!c) return false;
+  const [txd, txc, rxd, rxc] = c.dataset.cell.split('|');
+  const cell = [txd, +txc, rxd, +rxc], k = cellKey(...cell);
+  if (dui.train) {
+    const T = state.train, ex = lastSubs.find(s => s.key === k);
+    if (ex?.src === 'train') T.add = T.add.filter(x => x !== k);
+    else if (ex) T.off.push(k);
+    else if (T.off.includes(k)) T.off = T.off.filter(x => x !== k);
+    else T.add.push(k);
+    save(); renderDanteTab();
+  }
+  danteCell = cell; openId = null; renderPanel();
+  return true;
+}
+document.addEventListener('change', ev => {
+  const t = ev.target;
+  if (t.dataset.dshow) { dui.show[t.dataset.dshow] = t.checked; renderDanteTab(); }
+  if (t.dataset.dopt) { dui[t.dataset.dopt] = t.checked; renderDanteTab(); }
+});
 
 const nextN = () => Math.max(0, ...state.inputs.map(e => +e.n || 0)) + 1;
 $('#addIn').onclick = () => { state.inputs.push({ id: uid(), n: nextN(), source: '', route: 'rio' }); update(); document.querySelector('#inputs .row:last-child .src')?.focus(); };
@@ -294,14 +336,14 @@ $('#bImport').onchange = async e => {
 };
 $('#print').onclick = () => window.print();
 $('#bSettings').onclick = () => {
-  const N = names(), labels = { dm7: 'Console', rioRegie: 'Rio de la régie', rio1: 'Rio plateau 1', rio2: 'Rio plateau 2', ulxd: 'Récepteur HF', ma1: 'Matrice MA-4.600 n°1', ma2: 'Matrice MA-4.600 n°2', ma3: 'Matrice MA-4.600 n°3' };
+  const N = names(), labels = NOMS_LIBELLES;
   $('#settingsFields').innerHTML = Object.keys(NOMS_DEFAUT).map(k => `<label>${labels[k]}<input data-name="${k}" value="${esc(N[k])}"></label>`).join('');
-  $('#dm7OutStart').value = state.settings.dm7OutStart || 1;
+  $('#dm7OutStart').value = state.settings.dm7OutStart || 9;
   $('#settings').showModal();
 };
 $('#settings').addEventListener('close', () => {
   document.querySelectorAll('[data-name]').forEach(i => { const v = i.value.trim(); if (v && v !== NOMS_DEFAUT[i.dataset.name]) state.settings.names[i.dataset.name] = v; else delete state.settings.names[i.dataset.name]; });
-  state.settings.dm7OutStart = +$('#dm7OutStart').value || 1; update();
+  state.settings.dm7OutStart = +$('#dm7OutStart').value || 9; update();
 });
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));

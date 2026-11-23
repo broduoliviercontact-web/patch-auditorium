@@ -117,4 +117,12 @@ export function devinePhantom(source = '') {
 export const NOMS_DEFAUT = {
   dm7: 'DM7', rioRegie: 'Rio-Regie', rio1: 'Rio-Plateau-1', rio2: 'Rio-Plateau-2',
   ulxd: 'ULXD4Q', ma1: 'MA4600-1', ma2: 'MA4600-2', ma3: 'MA4600-3',
+  dli1: 'HP-01-DLI430', dli2: 'HP-02-DLI230', dli3: 'HP-03-DLI430', dli4: 'HP-04-DLI230',
+  di4: 'DI-4-2000', di2: 'DI-2-2000', rednet: 'RedNet-D16R', adp: 'ADP-USB', digiface: 'Digiface-Dante',
+};
+export const NOMS_LIBELLES = {
+  dm7: 'Console DM7', rioRegie: 'Rio de la régie', rio1: 'Rio plateau 1', rio2: 'Rio plateau 2', ulxd: 'Récepteur HF ULXD4Q',
+  ma1: 'Matrice MA-4.600 n°1', ma2: 'Matrice MA-4.600 n°2', ma3: 'Matrice MA-4.600 n°3',
+  dli1: 'HP-01 DLI-430 façade jardin', dli2: 'HP-02 DLI-230 façade jardin', dli3: 'HP-03 DLI-430 façade cour', dli4: 'HP-04 DLI-230 façade cour',
+  di4: 'Ampli DI-4.2000 (subs)', di2: 'Ampli DI-2.2000 (centre)', rednet: 'Focusrite RedNet D16R', adp: 'Interface Audinate ADP-USB', digiface: 'Interface RME Digiface Dante',
 };

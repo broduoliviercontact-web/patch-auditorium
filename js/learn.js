@@ -47,6 +47,17 @@ export const LEARN_HTML = `
 <div class="box"><b>4. Primaire et secondaire.</b> Tout est câblé en double : un réseau primaire (switchs P1 au nodal, P2 en régie) et un secondaire (S1, S2). Si un côté lâche, le son continue par l'autre. Règle d'or : ne jamais relier P et S ensemble, et ne jamais brancher autre chose que du Dante dessus (le RTP MIDI va sur les switchs de contrôle).</div>
 <div class="box"><b>5. L'horloge.</b> Un seul appareil donne le tempo à tous : le « Leader ». Dans Dante Controller, onglet <i>Clock Status</i>, vérifie qui l'est. En général on coche <i>Preferred Leader</i> sur la console. Des clics dans le son = souvent un souci d'horloge.</div>
 
+<h2>La diffusion de la salle</h2>
+<p>La DM7 n'est reliée à aucune enceinte par un câble : tout part en Dante. Tu mixes sur le <b>Stereo</b> ; chaque zone de la salle reçoit le Stereo par son propre bus <b>Matrix</b>, avec son niveau à elle. Chaque Matrix sort sur un <b>Dante Out</b> fixe, auquel s'abonnent les amplis ou les enceintes.</p>
+<ul>
+  <li><b>Façade</b> (Matrix 1 et 2) : deux colonnes Fohhn DLI de chaque côté du cadre. Elles s'amplifient elles-mêmes et reçoivent le Dante directement.</li>
+  <li><b>Subs</b> (Matrix 3) : 4 AS40 suspendus devant le cadre, alimentés par l'ampli DI-4.2000 du nodal.</li>
+  <li><b>Front fills</b> (Matrix 4) : 8 XT1 au nez de scène pour les premiers rangs, alimentés par les matrices MA-4.600 n°1 et n°2.</li>
+  <li><b>Centre</b> (Matrix 5) : une AT40 au plafond, dans l'axe, alimentée par la DI-2.2000.</li>
+  <li><b>Retours</b> (Mix 1 à 4) : 4 XT22 sur les BAV-26 et BAV-28, alimentés par la MA-4.600 n°3.</li>
+</ul>
+<p>Les égalisations, délais et protections sont dans les amplis Fohhn (réglés par l'installateur avec Fohhn Audio Soft) : on n'y touche pas. L'onglet <b>Dante</b> montre toute cette diffusion dans une grille de Dante Controller simulée. Ce plan est une proposition : compare-le avec la config réelle (capture de Dante Controller) avant de l'appliquer, et sauvegarde d'abord l'existant (File → Save Preset).</p>
+
 <h2>La fantôme (+48 V)</h2>
 <p>Elle s'active sur l'entrée qui reçoit le micro : la Rio du plateau, ou la Rio de la régie quand on passe par un boîtier. Dans ce cas, la tension remonte les câbles et les deux patchs jusqu'au micro. Pose d'abord tes cordons, active la fantôme ensuite, et coupe-la avant de débrancher un cordon au Ghielmetti.</p>
 <p>Besoin de fantôme : micros statiques (C414, C451, KM184, MX418, DPA avec adaptateur XLR) et DI actives. Pas besoin : dynamiques (SM58, e906), DI passives, lignes. Les HF n'en ont jamais besoin.</p>
