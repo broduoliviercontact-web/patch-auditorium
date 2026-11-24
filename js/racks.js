@@ -45,7 +45,9 @@ export const ETAT = {
 // ---------------------------------------------------------------- baies
 // h = hauteur en U ; t = type de façade
 export const RACKS = {
-  nodal: { nom: 'Nodal · baie son', source: "Ordre d'après les photos du 24/11 (hauteurs approximatives).", mods: [
+  nodal: { nom: 'Nodal · baie son', source: "Ordre d'après la photo de la baie entière du 24/11.", mods: [
+    { t: 'dev', h: 1, nom: 'Patch fibre optique 1', sub: 'Liaisons fibre (dont 7021-7023 vers la régie)', col: '#1d1f24', style: 'lc' }, { t: 'brush' },
+    { t: 'dev', h: 1, nom: 'Patch fibre optique 2', col: '#1d1f24', style: 'lc' }, { t: 'brush' },
     { t: 'rj45', id: 'N-DANTE', nom: 'Patch RJ45 « Dante » (façade)' }, { t: 'brush' },
     { t: 'switch', nom: 'Primaire 1', sid: 'S-P1', role: 'Switch Dante P1', fibre: 7021, col: '#4cc38a' }, { t: 'brush' },
     { t: 'switch', nom: 'Secondaire 1', sid: 'S-S1', role: 'Switch Dante S1', fibre: 7022, col: '#82aaff' }, { t: 'brush' },
@@ -210,6 +212,7 @@ function dev(m, y, h) {
   if (m.style === 'rednet') s += `<rect x="${mx}" y="${y + 8}" width="260" height="${h - 16}" rx="3" fill="#111"/>` + T(mx + 130, y + h / 2 + 5, 'REDNET D16R', { fs: 13, c: '#fff', w: 700 });
   if (m.style === 'tascam') s += `<rect x="${mx}" y="${y + 9}" width="220" height="${h - 18}" fill="#2f4fd6"/>`;
   if (m.style === 'screen') s += `<rect x="${EAR + 300}" y="${y + 12}" width="${IN / 2 - 200}" height="${h - 24}" fill="#2b3a55"/><rect x="${EAR + IN / 2 + 120}" y="${y + 12}" width="${IN / 2 - 200}" height="${h - 24}" fill="#2b3a55"/>`;
+  if (m.style === 'lc') for (let i = 0; i < 24; i++) s += `<rect x="${mx - 120 + i * 30}" y="${y + 14}" width="22" height="${h - 28}" rx="3" fill="#7a2a55"/><rect x="${mx - 115 + i * 30}" y="${y + 20}" width="12" height="${h - 40}" rx="2" fill="#c9b38a"/>`;
   if (m.style === 'fo') for (let i = 0; i < 12; i++) s += `<rect x="${mx + i * 52}" y="${y + 15}" width="34" height="20" rx="2" fill="#4fd1c5" opacity=".6"/>`;
   s += T(EAR + 24, y + (m.sub ? h / 2 - 3 : h / 2 + 6), m.nom, { fs: 19, c: '#fff', a: 'start', w: 700 });
   if (m.sub) s += T(EAR + 24, y + h / 2 + 18, m.sub, { fs: 14, c: '#b9c1cd', a: 'start' });
