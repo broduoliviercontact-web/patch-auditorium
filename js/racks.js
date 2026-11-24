@@ -315,5 +315,5 @@ export function cordInfo(c) {
   return `<h2><span class="dot" style="background:${c.color}"></span> Cordon</h2>
     <p><b>${esc(A?.tip?.split('\n')[0] || c.a)}</b></p><p>↕</p><p><b>${esc(B?.tip?.split('\n')[0] || c.b)}</b></p>
     <p><button data-delcord="${c.id}" class="primary">Retirer ce cordon</button> <button data-cordcolor="${c.id}">Changer la couleur</button></p>
-    <p class="hint">Raccourci : sélectionne un cordon puis touche Suppr.</p>`;
+    <p class="hint">Raccourcis : double-clic sur le cordon, ou sélection puis touche Suppr.</p>`;
 }

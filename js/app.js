@@ -298,6 +298,7 @@ function addCord(a, b) {
 function delCord(id) { state.cords = state.cords.filter(c => c.id !== id); if (cordSel === id) cordSel = null; save(); renderBaiesTab(); renderPanel(); }
 function flash(msg) { const d = document.createElement('div'); d.className = 'flash'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
 
+let lastCordClick = { id: null, t: 0 };
 function baiesClick(t) {
   const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; cordSel = null; renderBaiesTab(); return true; }
   const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(1, rackZoom + d * .25)); renderBaiesTab(); return true; }
@@ -314,7 +315,13 @@ function baiesClick(t) {
     if (!cur && state.cords.some(c => [c.a, c.b].includes(`${id}:B${col}`))) { flash('Un cordon occupe le bas de cette colonne : retire-le d\'abord.'); return true; }
     (state.plugs[id] ||= {})[col] = !cur; save(); renderBaiesTab(); renderPanel(); return true;
   }
-  const cd = t.closest('[data-cord]'); if (cd) { cordSel = cd.dataset.cord; rkSel = null; openId = null; danteCell = null; renderBaiesTab(); renderPanel(); return true; }
+  const cd = t.closest('[data-cord]'); if (cd) {
+    // double-clic / double toucher : le cordon disparaît ; simple clic : il est sélectionné
+    const id = cd.dataset.cord, now = Date.now();
+    if (lastCordClick.id === id && now - lastCordClick.t < 450) { lastCordClick = { id: null, t: 0 }; delCord(id); return true; }
+    lastCordClick = { id, t: now };
+    cordSel = id; rkSel = null; openId = null; danteCell = null; renderBaiesTab(); renderPanel(); return true;
+  }
   return false;
 }
 
