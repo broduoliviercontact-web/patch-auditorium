@@ -1,7 +1,7 @@
 // Onglet « Baies » : les racks du nodal et de la régie, et chaque patch dessiné point par point,
 // avec les cordons du patch en cours. Sources : synoptique (indice 0), photo de la baie nodal
 // (ordre des modules), tableau « Régies Auditorium » (positions en U de la baie régie).
-import { BOITIERS } from './data.js';
+import { BOITIERS, RIO_PLATEAU } from './data.js';
 
 const range = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const pad = i => String(i).padStart(2, '0');
@@ -10,12 +10,12 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 // ---------------------------------------------------------------- étiquettes des câbles
 const LABEL = {};
 for (const [bav, b] of Object.entries(BOITIERS)) {
-  (b.aud || []).forEach((c, i) => (LABEL[c] = `${bav} AUD-${pad(i + 1)}`));
+  (b.aud || []).forEach((c, i) => (LABEL[c] = `${bav} AUD-${pad(i + (b.audStart || 1))}`));
   (b.eth || []).forEach((c, i) => (LABEL[c] = `${bav} ETH-${pad(i + 1)}`));
 }
 range(6001, 12).forEach(c => (LABEL[c] = 'Liaison nodal ↔ régie'));
 range(6049, 12).forEach(c => (LABEL[c] = 'Liaison nodal ↔ régie'));
-LABEL[6073] = 'APART MA120 entrée 1';
+LABEL[6073] = 'Biamp MA120 entrée 1 (RG INPUT 1)';
 Object.assign(LABEL, { 6105: 'Tascam sortie L', 6106: 'Tascam sortie R', 6125: 'Micro plafond AT897 avant-scène',
   6126: 'Micro plafond AT897 arrière salle', 6127: 'DM7 sortie 14', 6144: 'Tascam sortie AES', 6169: 'Tascam entrée L',
   6170: 'Tascam entrée R', 6175: 'Émetteur HF Rondson (entrée)', 6192: 'Tascam entrée AES' });
@@ -30,7 +30,9 @@ const ethPairs = { 'BAV-06': 4013, 'BAV-07': 4015, 'BAV-08': 4017, 'BAV-09': 401
   'BAV-12': 4025, 'BAV-13': 4027, 'BAV-14': 4029, 'BAV-16': 4035, 'BAV-17': 4037, 'BAV-18': 4039, 'BAV-19': 4041, 'BAV-25': 4077 };
 for (const [bav, c] of Object.entries(ethPairs)) { LABEL[c] = `${bav} ETH-01`; LABEL[c + 1] = `${bav} ETH-02`; }
 range(4031, 4).forEach((c, i) => (LABEL[c] = `BAV-15 ETH-${pad(i + 1)}`));
-range(4145, 8).forEach((c, i) => (LABEL[c] = `BAV-03 ETH-${pad(i + 1)}`));
+range(4145, 8).forEach((c, i) => (LABEL[c] = `BAV-03 Vidéo ETH-${pad(i + 1)}`));
+range(4153, 6).forEach((c, i) => (LABEL[c] = `BAV-04 FdsC ETH-${pad(i + 1)}`));
+range(4159, 4).forEach((c, i) => (LABEL[c] = `BAV-05 Vidéoprojecteur ETH-${pad(i + 1)}`));
 range(4139, 6).forEach((c, i) => (LABEL[c] = `BAV-02 ETH-${pad(i + 1)}`));
 range(4169, 10).forEach((c, i) => (LABEL[c] = `BAV-PMS-02 ETH-${pad(i + 1)}`));
 range(4501, 8).forEach((c, i) => (LABEL[c] = `Enceinte façade Fohhn DLI (${4501 + i})`));
@@ -79,7 +81,7 @@ export const BAIES = {
     { nom: 'Patch RJ45 D', u: 1, patch: 'N-D', kind: 'rj45' },
     { nom: 'Ghielmetti 1 (patch audio)', u: 1, patch: 'G1', kind: 'audio' },
     { nom: 'Limiteur Audiopole SPL-ONE', u: 1, kind: 'device' },
-    { nom: 'Ampli-mélangeur APART MA120', u: 2, kind: 'device' },
+    { nom: 'Ampli-mélangeur Biamp MA120', u: 2, kind: 'device' },
     { nom: 'Matrice Fohhn MA-4.600 n°1', u: 1, kind: 'amp' },
     { nom: 'Matrice Fohhn MA-4.600 n°2', u: 1, kind: 'amp' },
     { nom: 'Matrice Fohhn MA-4.600 n°3', u: 1, kind: 'amp' },
@@ -105,7 +107,7 @@ export const BAIES = {
     { nom: 'Focusrite RedNet D16R (AES ↔ Dante)', at: 23, u: 1, kind: 'device' },
     { nom: 'Enregistreur Tascam SS-R250N', at: 22, u: 1, kind: 'device' },
     { nom: 'Émetteur HF Rondson EJ-770T', at: 20, u: 1, kind: 'device' },
-    { nom: 'Rio 1608-D2 régie', at: 18, u: 3, kind: 'device' },
+    { nom: 'Rio1608-D3 régie', at: 18, u: 3, kind: 'device' },
     { nom: 'Tiroir 3U', at: 14, u: 3, kind: 'other' },
   ] },
 };
@@ -120,10 +122,9 @@ export function cordonsParPatch(res, names) {
   res.cordons.regie.forEach(c => add('G2', { a: c.de, b: c.vers, n: c.n, txt: `${c.n} · ${c.source}` }));
   // Rio du plateau : cordons fixes D1..D4 → P1 / S1
   const rios = new Set(res.inputs.filter(r => r.route === 'rio' && r.rioCh).map(r => r.rio));
-  res.outputs.forEach(o => o.steps.some(s => /Rio-Plateau|Rio plateau/i.test(s.txt)) && rios.add(1));
-  [[1, 'D1', 'P1'], [1, 'D2', 'S1'], [2, 'D3', 'P1'], [2, 'D4', 'S1']].forEach(([r, pt, sw]) => {
-    add('N-D', { a: pt, ext: `switch ${sw}`, fixe: true, actif: rios.has(r), txt: `${names['rio' + r]} → ${sw} (déjà posé)` });
-  });
+  res.outputs.forEach(o => o.steps.some(s => /Rio-Rack|Rio rack/i.test(s.txt)) && rios.add(1));
+  for (const [r, R] of Object.entries(RIO_PLATEAU)) for (const x of [R.prim, R.sec])
+    add('N-D', { a: x.patch, ext: `switch ${x.switch}`, fixe: true, actif: rios.has(+r), txt: `${names['rio' + r]} → ${x.switch}${R.aPoser ? ' (à poser)' : ' (déjà posé)'}` });
   res.net.forEach(n => { if (n.nodal) add(n.nodal.patch, { a: n.nodal.point, ext: 'Switch Contrôle 1', txt: n.nom }); });
   return out;
 }

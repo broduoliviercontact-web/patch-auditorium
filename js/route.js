@@ -15,10 +15,11 @@ export function prises(kind) {
   const out = [];
   for (const [bav, b] of Object.entries(BOITIERS)) {
     if (kind === 'ETH' && b.reserveRio) continue;
-    (b[key] || []).forEach((cable, i) => out.push({
+    const off = kind === 'AUD' ? (b.audStart || 1) - 1 : 0;
+    (b[key] || []).forEach((cable, j) => { const i = j + off; out.push({
       id: priseId(bav, kind, i), bav, nom: `${kind}-${String(i + 1).padStart(2, '0')}`, cable,
       loc: b.loc, zone: b.zone, verifier: !!b.verifier,
-    }));
+    }); });
   }
   return out;
 }
@@ -88,7 +89,7 @@ export function compute(state) {
         usedRio[rio].add(ch); res.usage['rio' + rio]++; r.rioCh = ch;
         const net = RIO_PLATEAU[rio];
         r.steps.push({ lieu: 'Plateau', txt: `Branche le micro sur ${N['rio' + rio]}, entrée ${ch}.` });
-        r.steps.push({ lieu: 'Réseau', fixe: true, txt: `${N['rio' + rio]} est reliée au BAV-24 : ${net.prim.prise} (primaire, câble ${net.prim.cable}) et ${net.sec.prise} (secondaire, câble ${net.sec.cable}). Au nodal, cordons déjà posés : ${net.prim.patch} → switch ${net.prim.switch}, ${net.sec.patch} → switch ${net.sec.switch}.` });
+        r.steps.push({ lieu: 'Réseau', fixe: true, txt: `${N['rio' + rio]} est reliée au BAV-24 : ${net.prim.prise} (primaire, câble ${net.prim.cable}) et ${net.sec.prise} (secondaire, câble ${net.sec.cable}). Au nodal, ${net.aPoser ? 'pose les cordons' : 'cordons déjà posés'} : ${net.prim.patch} → switch ${net.prim.switch}, ${net.sec.patch} → switch ${net.sec.switch}.` });
         if (ph.on) r.steps.push({ lieu: '48 V', txt: `Active le +48 V de l'entrée ${ch} de ${N['rio' + rio]} (depuis la DM7, page des préamplis de la Rio).` });
         danteFrom = { dev: N['rio' + rio], ch };
       }

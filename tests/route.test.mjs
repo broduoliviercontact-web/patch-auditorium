@@ -74,7 +74,7 @@ test('sorties : retour XT22 sur BAV-26 HP-01 → diffusion système (Mix 1, Dant
     { id: 'o2', nom: 'Sub artiste', type: 'actif', route: 'rio' },
     { id: 'o3', nom: 'Front', type: 'xt1', qte: 4, route: 'hp', prise: 'BAV-23:HP-01' },
   ]));
-  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA4600-3', 1, 9], ['Rio-Plateau-1', 1, 13], ['MA4600-2', 1, 4]]);
+  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA4600-3', 1, 9], ['Rio-Rack-1', 1, 13], ['MA4600-2', 1, 4]]);
   assert.equal(res.outputs[0].zone.bus, 'Mix 1');
   assert.ok(res.outputs[2].warnings.some(w => /impédance/.test(w)));
 });

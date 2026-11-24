@@ -9,7 +9,7 @@ const A = '#f0a53a', R = '#5aa9ff', D = '#4cc38a', Y = '#ffcb6b', B = '#82aaff',
 const SCHEMA = `<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif">
 ${lbl(110, 22, 'PLATEAU', '#e6e8ec')}${lbl(380, 22, 'NODAL (baie son)', '#e6e8ec')}${lbl(640, 22, 'RÉGIE', '#e6e8ec')}
 ${box(20, 40, 180, 56, 'Boîtiers BAV', 'prises XLR AUD-01…04', A)}
-${box(20, 150, 180, 56, 'Rio plateau 1 et 2', '16 entrées / 8 sorties', R)}
+${box(20, 150, 180, 56, 'Rio rack 1 et 2', '16 entrées / 8 sorties', R)}
 ${box(20, 250, 180, 50, 'Micros HF', 'ULXD4Q (4 canaux)', H)}
 ${box(20, 330, 180, 50, 'Prises HP Speakon', 'retours XT22, XT1', A)}
 ${box(290, 40, 180, 56, 'Ghielmetti 1', 'patch analogique', Y)}
@@ -43,7 +43,7 @@ export const LEARN_HTML = `
 <h2>Le Dante, en cinq idées</h2>
 <div class="box"><b>1. C'est de l'audio dans un câble réseau.</b> Des dizaines de canaux passent dans un seul câble RJ45, comme internet.</div>
 <div class="box"><b>2. Émetteurs et récepteurs.</b> Chaque appareil émet des canaux et en reçoit. La Rio émet ses 16 entrées micro et reçoit 8 canaux pour ses sorties. La DM7 reçoit les micros et émet ses mix.</div>
-<div class="box"><b>3. Brancher ne suffit pas : il faut s'abonner.</b> Dans Dante Controller, la grille montre les émetteurs en haut et les récepteurs à gauche. Cocher la case « DM7 canal 1 » × « Rio-Plateau-1 canal 1 » veut dire : le canal 1 de la console écoute l'entrée 1 de la Rio. C'est ce que l'onglet Fiches liste pour toi.</div>
+<div class="box"><b>3. Brancher ne suffit pas : il faut s'abonner.</b> Dans Dante Controller, la grille montre les émetteurs en haut et les récepteurs à gauche. Cocher la case « DM7 canal 1 » × « Rio-Rack-1 canal 1 » veut dire : le canal 1 de la console écoute l'entrée 1 de la Rio. C'est ce que l'onglet Fiches liste pour toi.</div>
 <div class="box"><b>4. Primaire et secondaire.</b> Tout est câblé en double : un réseau primaire (switchs P1 au nodal, P2 en régie) et un secondaire (S1, S2). Si un côté lâche, le son continue par l'autre. Règle d'or : ne jamais relier P et S ensemble, et ne jamais brancher autre chose que du Dante dessus (le RTP MIDI va sur les switchs de contrôle).</div>
 <div class="box"><b>5. L'horloge.</b> Un seul appareil donne le tempo à tous : le « Leader ». Dans Dante Controller, onglet <i>Clock Status</i>, vérifie qui l'est. En général on coche <i>Preferred Leader</i> sur la console. Des clics dans le son = souvent un souci d'horloge.</div>
 

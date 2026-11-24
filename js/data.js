@@ -37,9 +37,9 @@ export const BOITIERS = {
   'BAV-20': { loc: 'Plateau face jardin', zone: 'plateau', pos: [-82.83, 9.24], plaque: 'plaque_14.png',
     aud: range(6021, 4), eth: range(4049, 8), hp: range(5007, 4) },
   'BAV-21': { loc: 'Plateau face jardin', zone: 'plateau', pos: [-82.82, 8.23], plaque: 'plaque_19.png',
-    aud: [6061, 6062], eth: range(4057, 4), verifier: true },
+    aud: [6061, 6062], audStart: 3, eth: range(4057, 4) },
   'BAV-22': { loc: 'Plateau face cour', zone: 'plateau', pos: [-83.74, -2.42], plaque: 'plaque_19.png',
-    aud: [6063, 6064], eth: range(4061, 4), verifier: true },
+    aud: [6063, 6064], audStart: 3, eth: range(4061, 4) },
   'BAV-23': { loc: 'Plateau face cour', zone: 'plateau', pos: [-82.81, -3.61], plaque: 'plaque_14.png',
     aud: range(6065, 4), eth: range(4065, 8), hp: range(5011, 4) },
   'BAV-24': { loc: 'Plateau milieu jardin', zone: 'plateau', pos: [-86.89, 9.96], plaque: 'plaque_15.png',
@@ -66,12 +66,13 @@ export const BOITIERS = {
     aud: [6103, 6104] },
 };
 
-// Prises réseau du BAV-24 déjà câblées au nodal pour les Rio du plateau (confirmé par Oli).
+// Prises réseau du BAV-24 pour les Rio du plateau (Rio rack 1 et 2).
 export const RIO_PLATEAU = {
-  1: { prim: { prise: 'ETH-01', cable: 4073, patch: 'D1', switch: 'P1' },
-       sec:  { prise: 'ETH-02', cable: 4074, patch: 'D2', switch: 'S1' } },
-  2: { prim: { prise: 'ETH-03', cable: 4075, patch: 'D3', switch: 'P1' },
+  // Photo du nodal : cordons posés sur D3 / D4 (BAV-24 ETH-03 / ETH-04). D1 / D2 restent libres pour la 2e Rio.
+  1: { prim: { prise: 'ETH-03', cable: 4075, patch: 'D3', switch: 'P1' },
        sec:  { prise: 'ETH-04', cable: 4076, patch: 'D4', switch: 'S1' } },
+  2: { prim: { prise: 'ETH-01', cable: 4073, patch: 'D1', switch: 'P1' },
+       sec:  { prise: 'ETH-02', cable: 4074, patch: 'D2', switch: 'S1' }, aPoser: true },
 };
 
 // Prises HP (Speakon) des boîtiers -> matrices amplifiées Fohhn MA-4.600 (au nodal).
@@ -115,13 +116,13 @@ export function devinePhantom(source = '') {
 }
 
 export const NOMS_DEFAUT = {
-  dm7: 'DM7', rioRegie: 'Rio-Regie', rio1: 'Rio-Plateau-1', rio2: 'Rio-Plateau-2',
+  dm7: 'DM7', rioRegie: 'Rio-Regie', rio1: 'Rio-Rack-1', rio2: 'Rio-Rack-2',
   ulxd: 'ULXD4Q', ma1: 'MA4600-1', ma2: 'MA4600-2', ma3: 'MA4600-3',
   dli1: 'HP-01-DLI430', dli2: 'HP-02-DLI230', dli3: 'HP-03-DLI430', dli4: 'HP-04-DLI230',
   di4: 'DI-4-2000', di2: 'DI-2-2000', rednet: 'RedNet-D16R', adp: 'ADP-USB', digiface: 'Digiface-Dante',
 };
 export const NOMS_LIBELLES = {
-  dm7: 'Console DM7', rioRegie: 'Rio de la régie', rio1: 'Rio plateau 1', rio2: 'Rio plateau 2', ulxd: 'Récepteur HF ULXD4Q',
+  dm7: 'Console DM7', rioRegie: 'Rio1608-D3 de la régie', rio1: 'Rio rack 1 (plateau)', rio2: 'Rio rack 2 (plateau)', ulxd: 'Récepteur HF ULXD4Q',
   ma1: 'Matrice MA-4.600 n°1', ma2: 'Matrice MA-4.600 n°2', ma3: 'Matrice MA-4.600 n°3',
   dli1: 'HP-01 DLI-430 façade jardin', dli2: 'HP-02 DLI-230 façade jardin', dli3: 'HP-03 DLI-430 façade cour', dli4: 'HP-04 DLI-230 façade cour',
   di4: 'Ampli DI-4.2000 (subs)', di2: 'Ampli DI-2.2000 (centre)', rednet: 'Focusrite RedNet D16R', adp: 'Interface Audinate ADP-USB', digiface: 'Interface RME Digiface Dante',
