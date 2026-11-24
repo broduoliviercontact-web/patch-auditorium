@@ -24,11 +24,12 @@ export const LABELS = {
   'R-C': grp(['PMS-02', eth(10)]),
   G1top: grp(['Régie Spectacle', aud(13, 12)], ['BAV-06 R2FC', aud(1, 4)], ['BAV-15 Salle de Musique', aud(1, 4)], ['BAV-20', aud(1, 4)], ['BAV-28', aud(1, 4)]),
   G1bot: grp(['Régie Spectacle', aud(1, 12)], ['BAV-21', aud(3, 2)], ['BAV-22', aud(3, 2)], ['BAV-23', aud(1, 4)], ['BAV-26', aud(1, 4)], ['RG', ['INPUT 1']]),
+  // Ghielmetti régie : relevé complet sur les photos du 24/11 (colonnes 1 à 48)
   G2top: grp(['BAV-02 Son', aud(1, 2)], ['BAV-03 Vidéo', aud(1, 2)], ['OUT TASCAM', ['L', 'R']], ['BAV-01 FdsJ', aud(1, 2)], ['BAV-04 FdsC', aud(1, 2)],
-    ['PMS-01', aud(1, 4)], ['', ['', '']], ['RIO 16/8', range(1, 8).map(i => 'OUT ' + i)], ['Ambiance Scène', ['1', '2']], ['Con. Aud', ['Out 14']], ['', ['']],
+    ['PMS-01', aud(1, 4)], ['', ['', '']], ['RIO 16/8', range(1, 8).map(i => 'OUT ' + i)], ['Micro ambiance', ['Salle', 'Scène']], ['Con. Aud', ['Out 14']], ['', ['']],
     ['NODAL', aud(1, 12)], ['BAV-05 VP', aud(1, 2)], ['', ['']], ['Tascam', ['OUT AES']], ['OUT AES FOCUSRITE', ['1/2', '3/4', '5/6', '7/8']]),
-  G2bot: grp(['RIO 16/8', range(1, 16).map(i => 'IN ' + i)], ['BAV-02 Son', aud(3, 2)], ['BAV-03 Vidéo', aud(3, 2)], ['IN TASCAM', ['L', 'R']], ['Console', range(13, 4).map(i => 'IN ' + i)],
-    ['Émetteur HF', ['IN']], ['', ['']], ['NODAL', aud(13, 12)], ['', ['', '', '']], ['Tascam', ['IN AES']], ['AES FOCUSRITE', ['9/10', '11/12', '13/14', '15/16']]),
+  G2bot: grp(['RIO 16/8', range(1, 16).map(i => 'IN ' + i)], ['BAV-02 Son', aud(3, 2)], ['BAV-03 Vidéo', aud(3, 2)], ['IN TASCAM', ['L', 'R']], ['Console audio', range(13, 4).map(i => 'IN-' + i)],
+    ['ME', ['IN']], ['', ['']], ['NODAL', aud(13, 12)], ['', ['', '', '']], ['Tascam', ['IN AES']], ['AES FOCUSRITE', ['9/10', '11/12', '13/14', '15/16']]),
   'V-A': grp(['Nodal - Matrice vidéo', [...range(1, 8).map(i => 'IN ' + p2(i)), ...range(1, 8).map(i => 'OUT ' + p2(i))]]),
   'V-B': grp(['BAV-01 FdsJ', ['VID-01', 'VID-02']], ['BAV-02 Son', ['VID-01', 'VID-02']], ['BAV-03 Vidéo', range(1, 6).map(i => 'VID-' + p2(i))], ['BAV-04 FdsC', ['VID-01', 'VID-02', 'VID-03']], ['BAV-05 VP', ['VID-01', 'VID-02']]),
 };
@@ -37,7 +38,7 @@ const flat = g => g.flatMap(([gn, l]) => l.map(t => [gn, t].filter(Boolean).join
 // État relevé sur les photos (24/11) : bouchons du Ghielmetti nodal, ports occupés par un cordon
 export const ETAT = {
   G1plugs: new Set(range(1, 48).filter(i => i !== 25)), // bouchon partout sauf colonne 25 (BAV-28 AUD-01 / RG INPUT 1)
-  G2plugs: new Set(), // à relever
+  G2plugs: new Set([41, 42, 43]), // photo du 24/11 : bouchons seulement sous les colonnes vides 41-43 ; les autres colonnes sont patchées au cordon
   ports: { 'N-C': [1, 2], 'N-D': [3, 4, 17], 'N-DANTE': range(1, 8), 'R-A': [5, 17, 18, 19, 20, 21, 22, 23], 'R-B': [1, 10, 11, 12, 13], 'R-C': [1, 2, 5, 13, 24] },
 };
 
