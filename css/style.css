@@ -135,3 +135,9 @@ dialog h2 { margin-top:0; }
 .rackface { width:100%; height:auto; display:block; }
 .rackface .rk { cursor:pointer; } .rackface .rk:hover rect { stroke:#f0a53a; stroke-width:1.5; }
 .rackface .mod[data-goto] { cursor:pointer; }
+.rackinner { min-width:900px; max-width:none; }
+.rackface .rk { cursor:crosshair; touch-action:none; }
+.rackface .rk:hover > rect:first-of-type, .rackface .rk:hover > circle:first-of-type { stroke:#fff; stroke-width:2.5; }
+.rackface .cord { cursor:pointer; } .rackface .cord:hover path:nth-child(2) { stroke-width:8.5; }
+.rktip { position:fixed; z-index:50; max-width:320px; background:#0e1014; color:#f2f4f7; border:1px solid #f0a53a; border-radius:6px; padding:6px 9px; font-size:13px; white-space:pre-line; pointer-events:none; box-shadow:0 4px 14px #0009; }
+.flash { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#3a2a10; color:#ffd59a; border:1px solid #f0a53a; padding:10px 14px; border-radius:8px; z-index:60; font-size:14px; }

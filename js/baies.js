@@ -2,7 +2,7 @@
 // avec les cordons du patch en cours. Sources : synoptique (indice 0), photo de la baie nodal
 // (ordre des modules), tableau « Régies Auditorium » (positions en U de la baie régie).
 import { BOITIERS, RIO_PLATEAU } from './data.js';
-import { rackFace, RACKS } from './racks.js';
+import { rackFace, RACKS, CORD_COLORS } from './racks.js';
 
 const range = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const pad = i => String(i).padStart(2, '0');
@@ -204,23 +204,36 @@ export function todayMap(res, names) {
   return m;
 }
 
-export function renderBaies(el, res, names, which, zoom = 1) {
-  const used = cordonsParPatch(res, names), baie = BAIES[which], today = todayMap(res, names);
-  const patchIds = baie.modules.filter(m => m.patch).map(m => m.patch);
+// Cordons suggérés par le patch du jour (pointillés orange sur les baies)
+export function ghostCords(res, names) {
+  const out = [];
+  for (const [id, cords] of Object.entries(cordonsParPatch(res, names)))
+    for (const c of cords) if (c.b && (id === 'G1' || id === 'G2')) out.push({ a: `${id}:${c.a}`, b: `${id}:${c.b}`, txt: c.txt });
+  return out;
+}
+
+export function renderBaies(el, res, names, which, zoom = 1, ui = {}) {
+  const used = cordonsParPatch(res, names), today = todayMap(res, names);
+  const cords = ui.cords || [];
+  const placed = new Set(cords.map(c => [c.a, c.b].sort().join('|')));
+  const ghosts = ghostCords(res, names).filter(g => !placed.has([g.a, g.b].sort().join('|')));
+  const patchIds = BAIES[which].modules.filter(m => m.patch).map(m => m.patch);
   const actifs = id => (used[id] || []).filter(c => !c.fixe || c.actif).length;
+  const n = cords.filter(c => c.rack === which).length;
   el.innerHTML = `
-    <div class="bar"><span class="seg">${Object.entries(BAIES).map(([k, b]) => `<button data-baie="${k}" class="${k === which ? 'on' : ''}" data-v="bav">${k === 'nodal' ? 'Nodal' : 'Régie'}</button>`).join('')}</span>
+    <div class="bar"><span class="seg">${Object.keys(BAIES).map(k => `<button data-baie="${k}" class="${k === which ? 'on' : ''}" data-v="bav">${k === 'nodal' ? 'Nodal' : 'Régie'}</button>`).join('')}</span>
       <span class="seg"><button data-zoom-r="-1" title="Dézoomer">−</button><button data-zoom-r="0" title="Taille normale">${Math.round(zoom * 100)} %</button><button data-zoom-r="1" title="Zoomer">+</button></span>
-      <span class="hint">${esc(RACKS[which].source)} Touche un port ou une colonne pour lire son étiquette et son câble ; les points à brancher aujourd'hui sont entourés en orange.</span></div>
-    <h3 style="margin:4px 0 8px">${esc(RACKS[which].nom)}</h3>
-    <div class="rackwrap"><div style="width:${Math.round(1000 * zoom)}px;max-width:${zoom <= 1 ? '100%' : 'none'}">${rackFace(which, today)}</div></div>
-    <h3 style="margin:18px 0 8px">Patchs en détail</h3>
+      ${ghosts.some(g => g.a.startsWith(which === 'nodal' ? 'G1' : 'G2')) ? `<button class="primary" data-cords-today>Poser les cordons du patch du jour</button>` : ''}
+      ${n ? `<button data-cords-clear>Retirer les ${n} cordon${n > 1 ? 's' : ''} de cette baie</button>` : ''}
+    </div>
+    <p class="hint" style="margin:0 0 8px">${esc(RACKS[which].source)} <b>Appuie sur un point et glisse</b> jusqu'à un autre pour poser un cordon (Ghielmetti ↔ Ghielmetti, RJ45 ↔ RJ45 ou switch). Touche un cordon pour le retirer. Les pointillés orange sont les cordons proposés pour le patch du jour.</p>
+    <div class="rackwrap"><div class="rackinner" style="width:${Math.round(1400 * zoom)}px">${rackFace(which, { today, cords, plugs: ui.plugs, sel: ui.sel, ghosts })}</div></div>
+    <details class="patchcard" style="margin-top:14px"><summary><b>Patchs en détail</b> <span class="hint">· vue schématique et liste des cordons proposés</span></summary>
     <div class="patchcol">${[...patchIds].sort((a, b) => actifs(b) - actifs(a)).map(id => {
-        const cords = used[id] || [], act = cords.filter(c => !c.fixe || c.actif);
-        if (!act.length) return `<details class="patchcard" id="patch-${id}"><summary><b>${esc(PATCHES[id].nom)}</b> <span class="hint">· rien à poser, clic pour voir le patch</span></summary><div class="scroll">${patchSvg(id, cords)}</div></details>`;
+        const cs = used[id] || [], act = cs.filter(c => !c.fixe || c.actif);
         return `<div class="patchcard" id="patch-${id}"><h3>${esc(PATCHES[id].nom)}${act.length ? ` <span class="chip">${act.length} cordon${act.length > 1 ? 's' : ''}</span>` : ''}</h3>
-          <div class="scroll">${patchSvg(id, cords)}</div>
-          ${act.length ? `<table class="cordlist">${act.map(c => { const i = cords.indexOf(c); return `<tr><td><span class="dot" style="background:${CORD[i % CORD.length]}"></span></td><td><b>${esc(c.a)}</b> → <b>${esc(c.b || c.ext)}</b></td><td>${esc(c.txt)}</td><td class="hint">câble ${PATCHES[id].points[c.a] ?? '?'}${labelCable(PATCHES[id].points[c.a]) ? ' · ' + esc(labelCable(PATCHES[id].points[c.a])) : ''}</td></tr>`; }).join('')}</table>` : ''}
+          <div class="scroll">${patchSvg(id, cs)}</div>
+          ${act.length ? `<table class="cordlist">${act.map(c => { const i = cs.indexOf(c); return `<tr><td><span class="dot" style="background:${CORD[i % CORD.length]}"></span></td><td><b>${esc(c.a)}</b> → <b>${esc(c.b || c.ext)}</b></td><td>${esc(c.txt)}</td><td class="hint">câble ${PATCHES[id].points[c.a] ?? '?'}${labelCable(PATCHES[id].points[c.a]) ? ' · ' + esc(labelCable(PATCHES[id].points[c.a])) : ''}</td></tr>`; }).join('')}</table>` : ''}
         </div>`;
-      }).join('')}</div>`;
+      }).join('')}</div></details>`;
 }

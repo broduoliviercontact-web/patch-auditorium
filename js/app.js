@@ -1,9 +1,9 @@
 import { BOITIERS, MICROS, NOMS_DEFAUT, NOMS_LIBELLES } from './data.js';
 import { compute, prises, phantomDe, micro } from './route.js';
 import { LEARN_HTML } from './learn.js';
-import { renderBaies, todayMap } from './baies.js';
-import { rkInfo } from './racks.js';
-let rackZoom = 1, rkSel = null;
+import { renderBaies, todayMap, ghostCords } from './baies.js';
+import { rkInfo, cordInfo, JACKS, cordPath, CORD_COLORS, plugsOf } from './racks.js';
+let rackZoom = 1, rkSel = null, cordSel = null;
 import { renderDante, explain, cellKey } from './dante.js';
 import { ZONES } from './diffusion.js';
 const dui = { expTx: new Set(), expRx: new Set(), show: { sys: true, patch: true }, usedOnly: true, train: false, focus: null };
@@ -15,11 +15,13 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-const vide = () => ({ train: { add: [], off: [] }, show: { artist: '', date: new Date().toISOString().slice(0, 10) }, inputs: [], outputs: [], net: [], settings: { names: {}, dm7OutStart: 9 } });
+const vide = () => ({ cords: [], plugs: {}, train: { add: [], off: [] }, show: { artist: '', date: new Date().toISOString().slice(0, 10) }, inputs: [], outputs: [], net: [], settings: { names: {}, dm7OutStart: 9 } });
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || vide(); } catch { state = vide(); }
 state.settings ||= { names: {}, dm7OutStart: 9 };
 state.train ||= { add: [], off: [] };
+state.cords ||= [];
+state.plugs ||= {};
 let res = compute(state);
 let openId = null;          // ligne affichée dans le panneau
 const openSetup = new Set(); // lignes dont le « setup » est déplié
@@ -191,9 +193,11 @@ function miniPlan(bav) {
   return s + `</svg>`;
 }
 
+function renderBaiesTab() { renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom, { cords: state.cords, plugs: state.plugs, sel: cordSel }); }
 function renderDanteTab() { lastSubs = renderDante(document.getElementById('tab-dante'), res, names(), dui, state.train); }
 function renderPanel() {
-  if (!openId && !danteCell && rkSel) { $('#panelBody').innerHTML = rkInfo(rkSel, todayMap(res, names())); $('#panel').hidden = false; return; }
+  if (!openId && !danteCell && cordSel) { const c = state.cords.find(x => x.id === cordSel); if (c) { $('#panelBody').innerHTML = cordInfo(c); $('#panel').hidden = false; return; } }
+  if (!openId && !danteCell && rkSel) { $('#panelBody').innerHTML = rkInfo(rkSel, { today: todayMap(res, names()), cords: state.cords, plugs: state.plugs }); $('#panel').hidden = false; return; }
   if (!openId && danteCell) { $('#panelBody').innerHTML = explain(danteCell, lastSubs, res, names()); $('#panel').hidden = false; return; }
   if (!openId) { $('#panel').hidden = true; return; }
   const all = [...res.inputs.map(r => ({ r, kind: 'in' })), ...res.outputs.map(r => ({ r, kind: 'out' })), ...res.net.map(r => ({ r, kind: 'net' }))];
@@ -236,7 +240,7 @@ function renderFiches() {
 function renderAll() {
   $('#artist').value = state.show.artist || ''; $('#date').value = state.show.date || '';
   renderUsage(); renderInputs(); renderOutputs(); renderNet(); renderFiches(); renderPanel();
-  renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom);
+  renderBaiesTab();
   renderDanteTab();
 }
 
@@ -262,9 +266,7 @@ document.addEventListener('click', ev => {
   const t = ev.target;
   if (t.matches('[data-zoom]')) { $('#imgEl').src = t.src; $('#img').showModal(); return; }
   if (danteClick(t)) return;
-  const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom); return; }
-  const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(.6, rackZoom + d * .4)); renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom); return; }
-  const rk = t.closest('[data-rk]'); if (rk) { rkSel = rk.dataset.rk; openId = null; danteCell = null; renderPanel(); return; }
+  if (baiesClick(t)) return;
   const go = t.closest('[data-goto]'); if (go) { const el = document.getElementById('patch-' + go.dataset.goto); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
   const [list, i] = listOf(t); if (!list) return;
   const item = list[i];
@@ -275,8 +277,76 @@ document.addEventListener('click', ev => {
   if (act === 'open') { openId = item.id; danteCell = null; rkSel = null; renderPanel(); }
   if (act === 'del') { list.splice(i, 1); if (openId === item.id) openId = null; update(); }
 });
-$('#panelClose').onclick = () => { openId = null; danteCell = null; rkSel = null; renderPanel(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { openId = null; danteCell = null; rkSel = null; renderPanel(); } });
+$('#panelClose').onclick = () => { openId = null; danteCell = null; rkSel = null; cordSel = null; renderPanel(); renderBaiesTab(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { openId = null; danteCell = null; rkSel = null; cordSel = null; renderPanel(); renderBaiesTab(); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && cordSel && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { delCord(cordSel); } });
+
+// ---------------------------------------------------------------- baies : cordons façon VCV Rack
+const uidc = () => 'c' + Math.random().toString(36).slice(2, 8);
+const nextColor = () => CORD_COLORS[state.cords.length % CORD_COLORS.length];
+function addCord(a, b) {
+  const A = JACKS[a], B = JACKS[b];
+  if (!A || !B || a === b) return;
+  if (A.type !== B.type || A.rack !== B.rack) { flash(A.type !== B.type ? 'Ces deux points ne sont pas du même type (audio, RJ45, BNC).' : 'Les deux points doivent être dans la même baie.'); return; }
+  const busy = state.cords.find(c => [c.a, c.b].includes(a) || [c.a, c.b].includes(b));
+  if (busy) { flash('Ce point a déjà un cordon : retire-le d\'abord.'); return; }
+  // Ghielmetti : un cordon dans le bas d'une colonne prend la place du bouchon
+  for (const k of [a, b]) { const m = k.match(/^(G[12]):B(\d+)$/); if (m) { (state.plugs[m[1]] ||= {})[m[2]] = false; } }
+  state.cords.push({ id: uidc(), rack: A.rack, a, b, color: nextColor() });
+  save(); renderBaiesTab(); if (rkSel || cordSel) renderPanel();
+}
+function delCord(id) { state.cords = state.cords.filter(c => c.id !== id); if (cordSel === id) cordSel = null; save(); renderBaiesTab(); renderPanel(); }
+function flash(msg) { const d = document.createElement('div'); d.className = 'flash'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+
+function baiesClick(t) {
+  const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; cordSel = null; renderBaiesTab(); return true; }
+  const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(.5, rackZoom + d * .25)); renderBaiesTab(); return true; }
+  if (t.closest('[data-cords-today]')) {
+    const pre = baie === 'nodal' ? 'G1' : 'G2';
+    for (const g of ghostCords(res, names())) if (g.a.startsWith(pre)) addCord(g.a, g.b);
+    return true;
+  }
+  if (t.closest('[data-cords-clear]')) { if (confirm('Retirer tous les cordons de cette baie ?')) { state.cords = state.cords.filter(c => c.rack !== baie); save(); renderBaiesTab(); } return true; }
+  const dc = t.closest('[data-delcord]'); if (dc) { delCord(dc.dataset.delcord); return true; }
+  const cc = t.closest('[data-cordcolor]'); if (cc) { const c = state.cords.find(x => x.id === cc.dataset.cordcolor); if (c) { c.color = CORD_COLORS[(CORD_COLORS.indexOf(c.color) + 1) % CORD_COLORS.length]; save(); renderBaiesTab(); renderPanel(); } return true; }
+  const pl = t.closest('[data-plug]'); if (pl) {
+    const [id, col] = pl.dataset.plug.split(':'), cur = plugsOf(id, state.plugs).has(+col);
+    if (!cur && state.cords.some(c => [c.a, c.b].includes(`${id}:B${col}`))) { flash('Un cordon occupe le bas de cette colonne : retire-le d\'abord.'); return true; }
+    (state.plugs[id] ||= {})[col] = !cur; save(); renderBaiesTab(); renderPanel(); return true;
+  }
+  const cd = t.closest('[data-cord]'); if (cd) { cordSel = cd.dataset.cord; rkSel = null; openId = null; danteCell = null; renderBaiesTab(); renderPanel(); return true; }
+  return false;
+}
+
+// Glisser d'un point à un autre
+let drag = null;
+const svgPt = (svg, e) => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('.rackface [data-rk]'); if (!g) return;
+  e.preventDefault();
+  drag = { from: g.dataset.rk, x: e.clientX, y: e.clientY, moved: false, svg: g.ownerSVGElement };
+});
+document.addEventListener('pointermove', e => {
+  const tip = document.getElementById('rktip');
+  if (!drag) {
+    const g = e.target.closest?.('.rackface [data-rk]');
+    if (g) { tip.textContent = g.dataset.tip; tip.hidden = false; tip.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px'; tip.style.top = e.clientY + 16 + 'px'; } else tip.hidden = true;
+    return;
+  }
+  if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) drag.moved = true;
+  if (!drag.moved) return;
+  tip.hidden = true;
+  const A = JACKS[drag.from], p = svgPt(drag.svg, e), tmp = drag.svg.querySelector('#cordtmp');
+  if (A && tmp) { tmp.setAttribute('d', cordPath(A, p)); tmp.setAttribute('stroke', nextColor()); }
+});
+document.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  d.svg.querySelector('#cordtmp')?.setAttribute('d', '');
+  if (!d.moved) { rkSel = d.from; cordSel = null; openId = null; danteCell = null; renderPanel(); return; }
+  const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-rk]');
+  if (el) addCord(d.from, el.dataset.rk);
+});
 
 function danteClick(t) {
   const tx = t.closest('[data-tx]'), rx = t.closest('[data-rx]');
