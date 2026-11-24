@@ -10,8 +10,8 @@ export const DEVICES = [
   { key: 'rio2', tx: 16, rx: 8, lieu: 'Plateau (fly case), réseau par le BAV-24', role: 'stagebox' },
   { key: 'ulxd', tx: 4, rx: 0, lieu: 'Baie régie, U41', role: 'hf' },
   { key: 'rednet', tx: 16, rx: 16, lieu: 'Baie régie, U23', role: 'convert' },
-  { key: 'digiface', tx: 16, rx: 16, lieu: 'Régie (ordinateur)', role: 'ordi' },
-  { key: 'adp', tx: 2, rx: 2, lieu: 'Régie (ordinateur)', role: 'ordi' },
+  { key: 'digiface', tx: 16, rx: 16, lieu: 'Régie (ordinateur, si branché)', role: 'ordi' },
+  { key: 'adp', tx: 2, rx: 2, lieu: 'Régie (ordinateur, si branché)', role: 'ordi' },
   { key: 'dli1', tx: 0, rx: 2, lieu: 'Façade jardin', role: 'hp' },
   { key: 'dli2', tx: 0, rx: 2, lieu: 'Façade jardin', role: 'hp' },
   { key: 'dli3', tx: 0, rx: 2, lieu: 'Façade cour', role: 'hp' },
@@ -25,7 +25,7 @@ export const DEVICES = [
 
 // Ce qui est branché derrière chaque canal de réception des amplis / enceintes
 export const RX_LABELS = {
-  dli1: ['HP-01 DLI-430 (jardin)'], dli2: ['HP-02 DLI-230 (jardin)'], dli3: ['HP-03 DLI-430 (cour)'], dli4: ['HP-04 DLI-230 (cour)'],
+  dli1: ['Façade jardin haut'], dli2: ['Façade jardin bas'], dli3: ['Façade cour haut'], dli4: ['Façade cour bas'],
   di4: ['SUB-01 AS40 · câble 5001', 'SUB-02 AS40 · câble 5002', 'SUB-03 AS40 · câble 5003', 'SUB-04 AS40 · câble 5004'],
   di2: ['AT40 centre (EPC-01) · câble 5005', '(libre)'],
   ma1: ['XT1 n°1 · BAV-20 HP-01 · 5007', 'XT1 n°2 · BAV-20 HP-02 · 5008', 'XT1 n°3 · BAV-20 HP-03 · 5009', 'XT1 n°4 · BAV-20 HP-04 · 5010'],

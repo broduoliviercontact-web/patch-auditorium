@@ -14,7 +14,7 @@ test('kick sur BAV-20 AUD-01 : nodal A21 → B1, régie A29 → B1, Rio régie 1
   assert.equal(r.g1, 'A21');
   assert.deepEqual([r.liaison.cable, r.liaison.g1, r.liaison.g2], [6049, 'B1', 'A29']);
   assert.equal(r.regieIn.ch, 1); assert.equal(r.regieIn.g2, 'B1');
-  assert.deepEqual(r.dante[0], { rxDev: 'DM7', rxCh: 1, txDev: 'Rio-Regie', txCh: 1, label: 'Kick' });
+  assert.deepEqual(r.dante[0], { rxDev: 'Y001-Yamaha-DM7C', rxCh: 1, txDev: 'Y003-Yamaha-Rio1608-D3-REGIE', txCh: 1, label: 'Kick' });
   assert.equal(r.phantom.on, false);
 });
 
@@ -74,7 +74,7 @@ test('sorties : retour XT22 sur BAV-26 HP-01 → diffusion système (Mix 1, Dant
     { id: 'o2', nom: 'Sub artiste', type: 'actif', route: 'rio' },
     { id: 'o3', nom: 'Front', type: 'xt1', qte: 4, route: 'hp', prise: 'BAV-23:HP-01' },
   ]));
-  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA4600-3', 1, 9], ['Rio-Rack-1', 1, 13], ['MA4600-2', 1, 4]]);
+  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA-Retour-Scene', 1, 9], ['Rio-Rack-1', 1, 13], ['MA-Nez-Scene-2', 1, 4]]);
   assert.equal(res.outputs[0].zone.bus, 'Mix 1');
   assert.ok(res.outputs[2].warnings.some(w => /impédance/.test(w)));
 });

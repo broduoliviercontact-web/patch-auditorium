@@ -115,15 +115,16 @@ export function devinePhantom(source = '') {
   return null;
 }
 
+// Noms Dante réels (capture de Dante Controller du 24/11/2026). Rio-Rack-1 / 2 : hors réseau ce jour-là, nom à confirmer.
 export const NOMS_DEFAUT = {
-  dm7: 'DM7', rioRegie: 'Rio-Regie', rio1: 'Rio-Rack-1', rio2: 'Rio-Rack-2',
-  ulxd: 'ULXD4Q', ma1: 'MA4600-1', ma2: 'MA4600-2', ma3: 'MA4600-3',
-  dli1: 'HP-01-DLI430', dli2: 'HP-02-DLI230', dli3: 'HP-03-DLI430', dli4: 'HP-04-DLI230',
-  di4: 'DI-4-2000', di2: 'DI-2-2000', rednet: 'RedNet-D16R', adp: 'ADP-USB', digiface: 'Digiface-Dante',
+  dm7: 'Y001-Yamaha-DM7C', rioRegie: 'Y003-Yamaha-Rio1608-D3-REGIE', rio1: 'Rio-Rack-1', rio2: 'Rio-Rack-2',
+  ulxd: 'ULXD4Q', ma1: 'MA-Nez-Scene-1', ma2: 'MA-Nez-Scene-2', ma3: 'MA-Retour-Scene',
+  dli1: 'Facade-J-Haut', dli2: 'Facade-J-Bas', dli3: 'Facade-C-Haut', dli4: 'Facade-C-Bas',
+  di4: 'DI-4-2000-SUB', di2: 'DI-2-2000-Centre', rednet: 'RN-D16R2-2dd670', adp: 'ADP-USB', digiface: 'Digiface-Dante',
 };
 export const NOMS_LIBELLES = {
-  dm7: 'Console DM7', rioRegie: 'Rio1608-D3 de la régie', rio1: 'Rio rack 1 (plateau)', rio2: 'Rio rack 2 (plateau)', ulxd: 'Récepteur HF ULXD4Q',
+  dm7: 'Console DM7 Compact (leader de l\'horloge)', rioRegie: 'Rio1608-D3 de la régie', rio1: 'Rio rack 1 (plateau)', rio2: 'Rio rack 2 (plateau)', ulxd: 'Récepteur HF ULXD4Q',
   ma1: 'Matrice MA-4.600 n°1', ma2: 'Matrice MA-4.600 n°2', ma3: 'Matrice MA-4.600 n°3',
-  dli1: 'HP-01 DLI-430 façade jardin', dli2: 'HP-02 DLI-230 façade jardin', dli3: 'HP-03 DLI-430 façade cour', dli4: 'HP-04 DLI-230 façade cour',
+  dli1: 'Façade jardin haut (DLI-430 ?)', dli2: 'Façade jardin bas (DLI-230 ?)', dli3: 'Façade cour haut (DLI-430 ?)', dli4: 'Façade cour bas (DLI-230 ?)',
   di4: 'Ampli DI-4.2000 (subs)', di2: 'Ampli DI-2.2000 (centre)', rednet: 'Focusrite RedNet D16R', adp: 'Interface Audinate ADP-USB', digiface: 'Interface RME Digiface Dante',
 };
