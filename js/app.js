@@ -300,7 +300,7 @@ function flash(msg) { const d = document.createElement('div'); d.className = 'fl
 
 function baiesClick(t) {
   const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; cordSel = null; renderBaiesTab(); return true; }
-  const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(.5, rackZoom + d * .25)); renderBaiesTab(); return true; }
+  const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(1, rackZoom + d * .25)); renderBaiesTab(); return true; }
   if (t.closest('[data-cords-today]')) {
     const pre = baie === 'nodal' ? 'G1' : 'G2';
     for (const g of ghostCords(res, names())) if (g.a.startsWith(pre)) addCord(g.a, g.b);
@@ -423,6 +423,7 @@ $('#settings').addEventListener('close', () => {
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
+  document.body.classList.toggle('wide', ['baies', 'dante'].includes(b.dataset.tab));
 });
 document.getElementById('tab-learn').innerHTML = LEARN_HTML;
 renderAll();

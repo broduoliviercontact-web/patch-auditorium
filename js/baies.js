@@ -227,7 +227,7 @@ export function renderBaies(el, res, names, which, zoom = 1, ui = {}) {
       ${n ? `<button data-cords-clear>Retirer les ${n} cordon${n > 1 ? 's' : ''} de cette baie</button>` : ''}
     </div>
     <p class="hint" style="margin:0 0 8px">${esc(RACKS[which].source)} <b>Appuie sur un point et glisse</b> jusqu'à un autre pour poser un cordon (Ghielmetti ↔ Ghielmetti, RJ45 ↔ RJ45 ou switch). Touche un cordon pour le retirer. Les pointillés orange sont les cordons proposés pour le patch du jour.</p>
-    <div class="rackwrap"><div class="rackinner" style="width:${Math.round(1400 * zoom)}px">${rackFace(which, { today, cords, plugs: ui.plugs, sel: ui.sel, ghosts })}</div></div>
+    <div class="rackwrap"><div class="rackinner" style="width:${Math.round(100 * zoom)}%">${rackFace(which, { today, cords, plugs: ui.plugs, sel: ui.sel, ghosts })}</div></div>
     <details class="patchcard" style="margin-top:14px"><summary><b>Patchs en détail</b> <span class="hint">· vue schématique et liste des cordons proposés</span></summary>
     <div class="patchcol">${[...patchIds].sort((a, b) => actifs(b) - actifs(a)).map(id => {
         const cs = used[id] || [], act = cs.filter(c => !c.fixe || c.actif);

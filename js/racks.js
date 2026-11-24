@@ -88,7 +88,7 @@ export const RACKS = {
 };
 
 // ---------------------------------------------------------------- dessin
-const W = 1400, EAR = 30, IN = W - 2 * EAR, UH = 52;
+const W = 1400, EAR = 30, IN = W - 2 * EAR, UH = 60;
 const T = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-size="${o.fs || 11}" fill="${o.c || '#c9ced6'}" text-anchor="${o.a || 'middle'}" ${o.w ? `font-weight="${o.w}"` : ''} ${o.ff ? `font-family="${o.ff}"` : ''} pointer-events="none">${esc(s)}</text>`;
 export const JACKS = {}; // clé -> { x, y, type, rack, tip }
 const ABBR = [[/Vidéoprojecteur/, 'VP'], [/Salle de Musique/, 'Salle mus.'], [/Micro ambiance/, 'Ambiance'], [/Console audio/, 'Console'], [/OUT AES FOCUSRITE|AES FOCUSRITE/, 'Focusrite'],
@@ -103,12 +103,12 @@ function strip(x, y, w, groups, n, h, compact = false) {
   for (const [g, l] of groups) {
     const gx = x + i * cw, gw = l.length * cw;
     if (g) {
-      let t = g, fs = fit(t, gw, 13);
-      for (const [re, r] of ABBR) if (fs < 9 && re.test(t)) { t = t.replace(re, r); fs = fit(t, gw, 13); }
-      s += T(gx + gw / 2, y + hh - 4, t, { fs: Math.max(Math.min(fs, hh - 4), 7), c: '#1d2230', w: 700 });
+      let t = g, fs = fit(t, gw, 17);
+      for (const [re, r] of ABBR) if (fs < 9 && re.test(t)) { t = t.replace(re, r); fs = fit(t, gw, 17); }
+      s += T(gx + gw / 2, y + hh - 4, t, { fs: Math.max(Math.min(fs, hh - 3), 7.5), c: '#0e121a', w: 800 });
     }
     if (i) s += `<line x1="${gx}" y1="${y + 2}" x2="${gx}" y2="${y + h - 2}" stroke="#7d8593" stroke-width="1.2"/>`;
-    l.forEach((t, k) => { const tt = compact ? short(t) : t; s += T(gx + (k + .5) * cw, y + h - 5, tt, { fs: Math.max(Math.min(fit(tt, cw, 12), hh - 4), 6.5), c: '#2a2f38' }); });
+    l.forEach((t, k) => { const tt = compact ? short(t) : t; s += T(gx + (k + .5) * cw, y + h - 6, tt, { fs: Math.max(Math.min(fit(tt, cw, 16, .66), hh - 3), 7), c: '#1d2230', w: 600 }); });
     i += l.length;
   }
   return s + `<line x1="${x + 2}" y1="${y + hh + 1}" x2="${x + w - 2}" y2="${y + hh + 1}" stroke="#c3c8d0" stroke-width=".8"/>`;
@@ -118,17 +118,17 @@ const jack = (key, x, y, type, rack, tip) => { JACKS[key] = { x, y, type, rack, 
 
 function rj45(m, y, o, rack) {
   const n = 24, x0 = EAR + 46, w = IN - 92, cw = w / n, P = PATCHES[m.id], pts = P?.points || {};
-  let s = strip(x0, y + 3, w, LABELS[m.id], n, 34);
+  let s = strip(x0, y + 3, w, LABELS[m.id], n, 44);
   const L = flat(LABELS[m.id]);
   for (let i = 1; i <= n; i++) {
-    const pt = (P?.rows[0] || '') + i, key = `${m.id}:${pt}`, cable = pts[pt], x = x0 + (i - .5) * cw, yy = y + 41;
+    const pt = (P?.rows[0] || '') + i, key = `${m.id}:${pt}`, cable = pts[pt], x = x0 + (i - .5) * cw, yy = y + 54;
     const on = o.today.get(key);
     const tip = `${m.nom} · port ${i} · ${L[i - 1] || 'sans étiquette'}${cable ? ' · câble ' + cable : ''}${labelCable(cable) && !L[i - 1] ? ' · ' + labelCable(cable) : ''}${on ? '\nAujourd\'hui : ' + on : ''}`;
-    jack(key, x, yy + 8, 'eth', rack, tip);
+    jack(key, x, yy + 11, 'eth', rack, tip);
     s += `<g data-rk="${key}" class="rk" data-tip="${esc(tip)}">
-      <rect x="${x - cw * .4}" y="${yy - 1}" width="${cw * .8}" height="18" rx="2" fill="${cable ? '#cbb67f' : '#1a1c21'}" stroke="${on ? '#f0a53a' : '#000'}" stroke-width="${on ? 3 : 1}"/>
-      <rect x="${x - cw * .25}" y="${yy + 5}" width="${cw * .5}" height="9" fill="#24262a"/>
-      ${T(x, yy + 30, i, { fs: 11, c: '#f2f4f7', w: 600 })}</g>`;
+      <rect x="${x - cw * .42}" y="${yy - 1}" width="${cw * .84}" height="24" rx="2" fill="${cable ? '#cbb67f' : '#1a1c21'}" stroke="${on ? '#f0a53a' : '#000'}" stroke-width="${on ? 3 : 1}"/>
+      <rect x="${x - cw * .27}" y="${yy + 7}" width="${cw * .54}" height="12" fill="#24262a"/>
+      ${T(x, yy + 42, i, { fs: 15, c: '#fff', w: 700 })}</g>`;
   }
   return s;
 }
@@ -136,21 +136,21 @@ function rj45(m, y, o, rack) {
 function sw(m, y, o, rack) {
   const x = EAR + 14;
   let s = `<rect x="${EAR + 4}" y="${y + 3}" width="${IN - 8}" height="${UH - 6}" rx="3" fill="#dfe2e6"/><rect x="${EAR + 4}" y="${y + 3}" width="8" height="${UH - 6}" fill="${m.col}"/>`;
-  s += T(x + 44, y + 21, 'cisco', { fs: 14, c: '#2b6ca3', w: 700 }) + T(x + 44, y + 37, 'Catalyst 1300', { fs: 9, c: '#666' });
-  s += `<rect x="${x + 110}" y="${y + 9}" width="120" height="32" fill="#fff6b0" transform="rotate(-1 ${x + 170} ${y + 25})"/>` + T(x + 170, y + 31, m.nom, { fs: 15, c: '#333', ff: 'cursive' });
-  const px = x + 270, pw = 30;
+  s += T(x + 46, y + 25, 'cisco', { fs: 19, c: '#2b6ca3', w: 700 }) + T(x + 46, y + 44, 'Catalyst 1300', { fs: 11, c: '#555' });
+  s += `<rect x="${x + 104}" y="${y + 9}" width="150" height="40" fill="#fff6b0" transform="rotate(-1 ${x + 179} ${y + 29})"/>` + T(x + 179, y + 36, m.nom, { fs: 20, c: '#222', ff: 'cursive' });
+  const px = x + 290, pw = 32;
   for (let i = 0; i < 24; i++) {
     const col = Math.floor(i / 2), row = i % 2, n = i + 1, key = `${m.sid}:${n}`;
-    const bx = px + col * pw + (col >= 6 ? 14 : 0), by = y + 8 + row * 20, on = o.today.get(key);
+    const bx = px + col * pw + (col >= 6 ? 14 : 0), by = y + 10 + row * 22, on = o.today.get(key);
     const tip = `${m.role} (« ${m.nom} ») · port ${n}`;
     jack(key, bx + 12, by + 8, 'eth', rack, tip);
-    s += `<g data-rk="${key}" class="rk" data-tip="${esc(tip)}"><rect x="${bx}" y="${by}" width="24" height="16" rx="2" fill="#2c2f33" stroke="${on ? '#f0a53a' : '#000'}" stroke-width="${on ? 3 : .8}"/>
-      ${T(bx + 12, by + 12, n, { fs: 8, c: '#8a919c' })}</g>`;
+    s += `<g data-rk="${key}" class="rk" data-tip="${esc(tip)}"><rect x="${bx}" y="${by}" width="26" height="19" rx="2" fill="#2c2f33" stroke="${on ? '#f0a53a' : '#000'}" stroke-width="${on ? 3 : .8}"/>
+      ${T(bx + 12, by + 13, n, { fs: 10, c: '#c0c6cf', w: 600 })}</g>`;
   }
   const fx = px + 12 * pw + 40;
   for (let i = 0; i < 4; i++) s += `<rect x="${fx + i * 34}" y="${y + 15}" width="28" height="18" rx="2" fill="#9aa0a8"/>`;
   if (m.fibre) s += `<rect x="${fx - 3}" y="${y + 12}" width="34" height="24" rx="3" fill="none" stroke="#2fb3a7" stroke-width="2.5"/>` + T(fx + 14, y + UH - 5, 'fibre ' + m.fibre, { fs: 10, c: '#1f8a80', w: 700 });
-  s += T(fx + 150, y + 22, m.role, { fs: 13, c: '#222', a: 'start', w: 700 }) + (m.note ? T(fx + 150, y + 38, m.note, { fs: 10, c: '#555', a: 'start' }) : '');
+  s += T(fx + 150, y + 26, m.role, { fs: 17, c: '#222', a: 'start', w: 700 }) + (m.note ? T(fx + 150, y + 46, m.note, { fs: 13, c: '#555', a: 'start' }) : '');
   return s;
 }
 
@@ -158,14 +158,14 @@ function ghiel(m, y, o, h, rack) {
   const n = 48, x0 = EAR + 40, w = IN - 80, cw = w / n, top = LABELS[m.top], bot = LABELS[m.bot];
   const plugs = plugsOf(m.id, o.plugs), ft = flat(top), fb = flat(bot), pts = PATCHES[m.id].points;
   let s = `<rect x="${EAR + 2}" y="${y + 2}" width="${IN - 4}" height="${h - 4}" rx="4" fill="#2d3440"/>`;
-  s += strip(x0, y + 5, w, top, n, 34, true);
-  s += strip(x0, y + h - 39, w, bot, n, 34, true);
+  s += strip(x0, y + 5, w, top, n, 44, true);
+  s += strip(x0, y + h - 49, w, bot, n, 44, true);
   s += T(EAR + 20, y + h / 2 + 5, 'G', { fs: 16, c: '#fff', w: 700 });
-  const ya = y + 64, yb = y + h - 64;
+  const ya = y + 72, yb = y + h - 72;
   for (let i = 1; i <= n; i++) {
     const x = x0 + (i - .5) * cw;
     s += `<rect x="${x0 + (i - 1) * cw + 1}" y="${ya - 15}" width="${cw - 2}" height="${yb - ya + 30}" fill="${i % 2 ? '#353d4b' : '#303745'}" pointer-events="none"/>`;
-    s += T(x, (ya + yb) / 2 + 4, i, { fs: 10, c: '#9fb0c8', w: 600 });
+    s += T(x, (ya + yb) / 2 + 5, i, { fs: 14, c: '#c7d3e4', w: 700 });
     for (const [pt, cy, light, lab] of [['A' + i, ya, false, ft[i - 1]], ['B' + i, yb, true, fb[i - 1]]]) {
       const key = `${m.id}:${pt}`, on = o.today.get(key), cable = pts[pt], plug = pt[0] === 'B' && plugs.has(i);
       const tip = `Colonne ${i} · ${pt[0] === 'A' ? 'HAUT (source)' : 'BAS (destination)'} · ${lab || 'sans étiquette'}${cable ? ' · câble ' + cable : ''}${plug ? '\nBouchon en place : relié à « ' + (ft[i - 1] || '—') + ' »' : ''}${on ? '\nAujourd\'hui : ' + on : ''}`;
@@ -182,11 +182,11 @@ function ghiel(m, y, o, h, rack) {
 
 function bnc(m, y, o, rack) {
   const n = 16, x0 = EAR + 46, w = IN - 92, cw = w / n, L = flat(LABELS[m.id]);
-  let s = strip(x0, y + 3, w, LABELS[m.id], n, 34);
+  let s = strip(x0, y + 3, w, LABELS[m.id], n, 44);
   for (let i = 0; i < n; i++) {
     const x = x0 + (i + .5) * cw, key = `${m.id}:${i + 1}`, tip = `${m.nom} · ${L[i] || 'BNC ' + (i + 1)}`;
-    jack(key, x, y + 52, 'bnc', rack, tip);
-    s += `<g data-rk="${key}" class="rk" data-tip="${esc(tip)}"><circle cx="${x}" cy="${y + 52}" r="10" fill="#5a554e"/><circle cx="${x}" cy="${y + 52}" r="6" fill="#cfc9bd"/><circle cx="${x}" cy="${y + 52}" r="1.8" fill="#b8860b"/></g>`;
+    jack(key, x, y + 64, 'bnc', rack, tip);
+    s += `<g data-rk="${key}" class="rk" data-tip="${esc(tip)}"><circle cx="${x}" cy="${y + 64}" r="10" fill="#5a554e"/><circle cx="${x}" cy="${y + 64}" r="6" fill="#cfc9bd"/><circle cx="${x}" cy="${y + 64}" r="1.8" fill="#b8860b"/></g>`;
   }
   return s;
 }
@@ -211,8 +211,8 @@ function dev(m, y, h) {
   if (m.style === 'tascam') s += `<rect x="${mx}" y="${y + 9}" width="220" height="${h - 18}" fill="#2f4fd6"/>`;
   if (m.style === 'screen') s += `<rect x="${EAR + 300}" y="${y + 12}" width="${IN / 2 - 200}" height="${h - 24}" fill="#2b3a55"/><rect x="${EAR + IN / 2 + 120}" y="${y + 12}" width="${IN / 2 - 200}" height="${h - 24}" fill="#2b3a55"/>`;
   if (m.style === 'fo') for (let i = 0; i < 12; i++) s += `<rect x="${mx + i * 52}" y="${y + 15}" width="34" height="20" rx="2" fill="#4fd1c5" opacity=".6"/>`;
-  s += T(EAR + 24, y + (m.sub ? h / 2 - 3 : h / 2 + 5), m.nom, { fs: 15, c: '#fff', a: 'start', w: 700 });
-  if (m.sub) s += T(EAR + 24, y + h / 2 + 15, m.sub, { fs: 11.5, c: '#b9c1cd', a: 'start' });
+  s += T(EAR + 24, y + (m.sub ? h / 2 - 3 : h / 2 + 6), m.nom, { fs: 19, c: '#fff', a: 'start', w: 700 });
+  if (m.sub) s += T(EAR + 24, y + h / 2 + 18, m.sub, { fs: 14, c: '#b9c1cd', a: 'start' });
   return s;
 }
 
@@ -232,7 +232,7 @@ export function cordPath(a, b) {
 export function rackFace(which, o) {
   for (const k of Object.keys(JACKS)) if (JACKS[k].rack === which) delete JACKS[k];
   const R = RACKS[which];
-  const height = m => (m.h || (m.t === 'ghiel' ? 4 : m.t === 'rj45' ? 1.45 : m.t === 'bnc' ? 1.3 : 1)) * UH;
+  const height = m => (m.h || (m.t === 'ghiel' ? 4 : m.t === 'rj45' ? 1.6 : m.t === 'bnc' ? 1.35 : 1)) * UH;
   const items = []; let y = 12;
   if (R.top) {
     // Régie : ordre et position en U réels ; les U vides sont rétrécis, et le Ghielmetti est agrandi pour être lisible
@@ -253,11 +253,11 @@ export function rackFace(which, o) {
   for (const { m, y, ulab } of items) {
     const h = height(m);
     s += `<g class="mod">`;
-    if (ulab) s += `<text x="${EAR / 2 + 1}" y="${y + h / 2}" font-size="10" fill="#8a919c" text-anchor="middle" transform="rotate(-90 ${EAR / 2 + 1} ${y + h / 2})" pointer-events="none">${ulab}</text>`;
+    if (ulab) s += `<text x="${EAR / 2 + 1}" y="${y + h / 2}" font-size="13" font-weight="600" fill="#9aa3b2" text-anchor="middle" transform="rotate(-90 ${EAR / 2 + 1} ${y + h / 2})" pointer-events="none">${ulab}</text>`;
     if (m.t === 'brush') s += `<rect x="${EAR + 2}" y="${y + 5}" width="${IN - 4}" height="${h - 10}" fill="url(#brosse)" rx="2"/>`;
     else if (m.t === 'vent') s += `<rect x="${EAR + 2}" y="${y + 5}" width="${IN - 4}" height="${h - 10}" fill="url(#perf)" rx="2"/>`;
     else if (m.t === 'blank') s += `<rect x="${EAR + 2}" y="${y + 5}" width="${IN - 4}" height="${h - 10}" fill="#16181c" rx="2"/>`;
-    else if (m.t === 'rj45') s += `<rect x="${EAR + 2}" y="${y + 2}" width="${IN - 4}" height="${h - 4}" fill="#111316" rx="2"/>` + rj45(m, y, o, which) + T(EAR + 12, y + h / 2 + 6, m.id.split('-')[1] === 'DANTE' ? 'D' : m.id.split('-')[1], { fs: 16, c: '#f0a53a', a: 'start', w: 700 });
+    else if (m.t === 'rj45') s += `<rect x="${EAR + 2}" y="${y + 2}" width="${IN - 4}" height="${h - 4}" fill="#111316" rx="2"/>` + rj45(m, y, o, which) + T(EAR + 12, y + h / 2 + 8, m.id.split('-')[1] === 'DANTE' ? 'D' : m.id.split('-')[1], { fs: 22, c: '#f0a53a', a: 'start', w: 700 });
     else if (m.t === 'switch') s += sw(m, y, o, which);
     else if (m.t === 'ghiel') s += ghiel(m, y, o, h, which);
     else if (m.t === 'bnc') s += `<rect x="${EAR + 2}" y="${y + 2}" width="${IN - 4}" height="${h - 4}" fill="#111316" rx="2"/>` + bnc(m, y, o, which);
