@@ -1,10 +1,10 @@
 // Onglet « Dante » : un Dante Controller simulé. Grille émetteurs (en haut) × récepteurs (à gauche),
 // remplie avec la diffusion système et le patch du jour ; mode entraînement pour cocher / décocher.
-import { DEVICES, RX_LABELS, ZONES, dm7OutLabel } from './diffusion.js';
+import { DEVICES, RX_LABELS, ZONES, SYS_RX, DM7_RX_FIXE, dm7OutLabel } from './diffusion.js';
 import { NOMS_LIBELLES } from './data.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const SRC = { sys: { nom: 'Diffusion système', col: '#5aa9ff' }, patch: { nom: 'Patch du jour', col: '#f0a53a' }, train: { nom: 'Entraînement', col: '#c792ea' } };
+const SRC = { sys: { nom: 'Diffusion fixe (installateur)', col: '#5aa9ff' }, patch: { nom: 'Patch du jour', col: '#f0a53a' }, train: { nom: 'Entraînement', col: '#c792ea' } };
 export const cellKey = (tx, txCh, rx, rxCh) => `${tx}:${txCh}>${rx}:${rxCh}`;
 
 // ---------------------------------------------------------------- abonnements
@@ -12,11 +12,14 @@ export function subscriptions(res, names, train = { add: [], off: [] }, show = {
   const byName = Object.fromEntries(Object.entries(names).map(([k, v]) => [v, k]));
   const list = [], seen = new Set();
   const push = s => { const k = cellKey(s.tx, s.txCh, s.rx, s.rxCh); if (seen.has(k) || train.off.includes(k)) return; seen.add(k); list.push({ ...s, key: k }); };
-  if (show.sys) for (const z of ZONES) for (const [rx, rxCh] of z.rx) push({ tx: 'dm7', txCh: z.out, rx, rxCh, src: 'sys', zone: z });
+  if (show.sys) {
+    for (const z of ZONES) for (const [rx, rxCh] of z.rx) { const zz = SYS_RX[`${rx}:${rxCh}`]; push({ tx: 'dm7', txCh: zz.out, rx, rxCh, src: 'sys', zone: zz }); }
+    for (const f of DM7_RX_FIXE) push({ tx: f.tx, txCh: f.txCh, rx: 'dm7', rxCh: f.rx, src: 'sys', fixeHF: true });
+  }
   if (show.patch) for (const d of res.dante) {
     const tx = byName[d.txDev], rx = byName[d.rxDev]; if (!tx || !rx) continue;
     push({ tx, txCh: d.txCh, rx, rxCh: d.rxCh, src: d.sys ? 'sys' : 'patch', label: d.label,
-      zone: d.sys ? ZONES.find(z => z.out === d.txCh) : null });
+      zone: d.sys ? SYS_RX[`${rx}:${d.rxCh}`] : null });
   }
   for (const k of train.add) {
     const m = k.match(/^(\w+):(\d+)>(\w+):(\d+)$/); if (m) push({ tx: m[1], txCh: +m[2], rx: m[3], rxCh: +m[4], src: 'train' });
@@ -37,7 +40,7 @@ export function txLabel(dev, ch, res) {
   return '';
 }
 export function rxLabel(dev, ch, res) {
-  if (dev === 'dm7') { const r = res.inputs.find(x => x.n === ch && x.dante.length); return r ? r.source : ''; }
+  if (dev === 'dm7') { const r = res.inputs.find(x => x.dm7In === ch); return r ? r.source : ch <= 4 ? `HF ${ch}` : ''; }
   if (RX_LABELS[dev]) return RX_LABELS[dev][ch - 1] || '';
   return '';
 }
@@ -60,10 +63,12 @@ export function explain(cell, subs, res, names) {
   }
   for (const s of here) {
     h += `<p><span class="chip" style="border-color:${SRC[s.src].col};color:${SRC[s.src].col}">${SRC[s.src].nom}</span></p>`;
-    if (s.zone) {
+    if (s.fixeHF) {
+      h += `<p>Abonnement posé par l'installateur : les 4 canaux du récepteur HF ULXD4Q arrivent sur les entrées Dante 1 à 4 de la DM7. Ils ne passent par aucun câble ni patch.</p>`;
+    } else if (s.zone) {
       const z = s.zone, amp = DEVICES.find(d => d.key === rx);
       h += `<p>${esc(z.role)}</p><ol class="steps">
-        ${li('DM7', `Envoie ${z.src} dans ${z.bus}${z.retour ? " (le mix de retour de l'artiste)" : ''}.`)}
+        ${li('DM7', z.bus.startsWith('ST') ? `Ton mix principal sort sur le Stereo (${z.bus}).` : `Prépare le bus : ${z.bus}${z.retour ? " (le mix de retour de l'artiste)" : ''}.`)}
         ${li('DM7', `OUTPUT PATCH : ${z.bus} → Dante Out ${z.out}.`)}
         ${li('Dante', `Dante Controller : coche ${N[rx]} canal ${rxCh} (récepteur, à gauche) × ${N.dm7} canal ${z.out} (émetteur, en haut).`)}
         ${amp.role === 'hp'
@@ -73,7 +78,7 @@ export function explain(cell, subs, res, names) {
       </ol>`;
       if (z.retour) h += `<p class="hint">Pour brancher ce retour, ajoute-le dans l'onglet Sorties sur la bonne prise HP : le site reprendra ce bus et ce Dante Out.</p>`;
     } else if (s.src === 'patch') {
-      const r = rx === 'dm7' ? res.inputs.find(x => x.n === rxCh) : res.outputs.find(o => o.dm7Out === txCh);
+      const r = rx === 'dm7' ? res.inputs.find(x => x.dm7In === rxCh) : res.outputs.find(o => o.dm7Out === txCh);
       if (r) h += `<ol class="steps">${r.steps.map(st => li(st.lieu, st.txt)).join('')}</ol>`;
     } else {
       h += `<p>Abonnement ajouté en mode entraînement : ${esc(N[rx])} canal ${rxCh} écoute ${esc(N[tx])} canal ${txCh}. Dans le vrai Dante Controller, c'est exactement le clic sur cette case.</p>`;
@@ -132,7 +137,7 @@ export function renderDante(el, res, names, ui, train) {
   const nConf = subs.filter(s => s.conflict).length;
   el.innerHTML = `
     <div class="bar">
-      <label class="tog"><input type="checkbox" data-dshow="sys" ${ui.show.sys ? 'checked' : ''}> <span style="color:${SRC.sys.col}">■</span> Diffusion système</label>
+      <label class="tog"><input type="checkbox" data-dshow="sys" ${ui.show.sys ? 'checked' : ''}> <span style="color:${SRC.sys.col}">■</span> Diffusion fixe (installateur)</label>
       <label class="tog"><input type="checkbox" data-dshow="patch" ${ui.show.patch ? 'checked' : ''}> <span style="color:${SRC.patch.col}">■</span> Patch du jour</label>
       <label class="tog"><input type="checkbox" data-dopt="usedOnly" ${ui.usedOnly ? 'checked' : ''}> Seulement les canaux utilisés</label>
       <label class="tog"><input type="checkbox" data-dopt="train" ${ui.train ? 'checked' : ''}> <span style="color:${SRC.train.col}">■</span> Mode entraînement</label>
@@ -140,7 +145,7 @@ export function renderDante(el, res, names, ui, train) {
       ${nConf ? `<span class="w err">⚠ ${new Set(subs.filter(s => s.conflict).map(s => s.rx + s.rxCh)).size} conflit(s) : un récepteur abonné à deux émetteurs</span>` : ''}
     </div>
     <p class="hint">Comme dans Dante Controller : les émetteurs en haut, les récepteurs à gauche, une coche = « ce récepteur écoute cet émetteur ». + / − ouvre ou ferme un appareil. Clique sur une case pour voir toute la chaîne${ui.train ? ' ; en mode entraînement, le clic coche ou décoche' : ''}.</p>
-    <div class="zones">${ZONES.filter(z => !z.retour).concat([{ id: 'retours', nom: 'Retours 1-4', bus: 'Mix 1-4', out: '9-12', couleur: '#f78c6c', hp: '4 XT22 sur les BAV-26 et BAV-28' }]).map(z =>
+    <div class="zones">${ZONES.map(z =>
       `<button class="zone ${ui.focus === z.id ? 'on' : ''}" data-zone="${z.id}" style="--zc:${z.couleur}"><b>${esc(z.nom)}</b><span>${esc(z.bus)} → Dante Out ${z.out}</span><span class="hint">${esc(z.hp)}</span></button>`).join('')}</div>
     <div class="dgrid"><table class="dc">${head1}</tr>${head2}</tr>${body}</table></div>`;
   return subs;

@@ -14,7 +14,7 @@ test('kick sur BAV-20 AUD-01 : nodal A21 → B1, régie A29 → B1, Rio régie 1
   assert.equal(r.g1, 'A21');
   assert.deepEqual([r.liaison.cable, r.liaison.g1, r.liaison.g2], [6049, 'B1', 'A29']);
   assert.equal(r.regieIn.ch, 1); assert.equal(r.regieIn.g2, 'B1');
-  assert.deepEqual(r.dante[0], { rxDev: 'Y001-Yamaha-DM7C', rxCh: 1, txDev: 'Y003-Yamaha-Rio1608-D3-REGIE', txCh: 1, label: 'Kick' });
+  assert.deepEqual(r.dante[0], { rxDev: 'Y001-Yamaha-DM7C', rxCh: 5, txDev: 'Y003-Yamaha-Rio1608-D3-REGIE', txCh: 1, label: 'Kick' });
   assert.equal(r.phantom.on, false);
 });
 
@@ -68,14 +68,14 @@ test('prise utilisée deux fois = erreur', () => {
   assert.equal(res.inputs[1].ok, false);
 });
 
-test('sorties : retour XT22 sur BAV-26 HP-01 → diffusion système (Mix 1, Dante Out 9) ; enceinte active sur Rio → Out 13', () => {
+test('sorties : retour XT22 sur BAV-26 HP-01 → diffusion fixe (Dante Out 4) ; enceinte active sur Rio → Out 9', () => {
   const res = compute(base([], [
     { id: 'o1', nom: 'Retour chant', type: 'xt22', route: 'hp', prise: 'BAV-26:HP-01' },
     { id: 'o2', nom: 'Sub artiste', type: 'actif', route: 'rio' },
     { id: 'o3', nom: 'Front', type: 'xt1', qte: 4, route: 'hp', prise: 'BAV-23:HP-01' },
   ]));
-  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA-Retour-Scene', 1, 9], ['Rio-Rack-1', 1, 13], ['MA-Nez-Scene-2', 1, 4]]);
-  assert.equal(res.outputs[0].zone.bus, 'Mix 1');
+  assert.deepEqual(res.dante.map(d => [d.rxDev, d.rxCh, d.txCh]), [['MA-Retour-Scene', 1, 4], ['Rio-Rack-1', 1, 9], ['MA-Nez-Scene-2', 1, 16]]);
+  assert.equal(res.outputs[0].zone.bus, 'Mix Retours');
   assert.ok(res.outputs[2].warnings.some(w => /impédance/.test(w)));
 });
 
@@ -103,10 +103,10 @@ test('baies : cordons du kick sur G1 et G2', () => {
 test('dante : diffusion système + patch, conflit détecté en entraînement', () => {
   const res = compute(base([{ id: 'a', n: 1, source: 'Kick', route: 'rio' }], [{ id: 'o', nom: 'Retour', type: 'xt22', route: 'hp', prise: 'BAV-26:HP-01' }]));
   const subs = subscriptions(res, NOMS_DEFAUT);
-  assert.equal(subs.filter(s => s.src === 'sys').length, 21); // 2+2+4+8+1+4
-  assert.ok(subs.some(s => s.src === 'patch' && s.tx === 'rio1' && s.rx === 'dm7' && s.rxCh === 1));
+  assert.equal(subs.filter(s => s.src === 'sys').length, 23); // 2+2+2+8+1+4 + 4 HF
+  assert.ok(subs.some(s => s.src === 'patch' && s.tx === 'rio1' && s.rx === 'dm7' && s.rxCh === 5));
   assert.ok(!subs.some(s => s.conflict));
-  const t = subscriptions(res, NOMS_DEFAUT, { add: ['rio1:5>dm7:1'], off: ['dm7:3>di4:4'] });
+  const t = subscriptions(res, NOMS_DEFAUT, { add: ['rio1:5>dm7:5'], off: ['dm7:15>di4:1'] });
   assert.equal(t.filter(s => s.conflict).length, 2);
-  assert.ok(!t.some(s => s.key === 'dm7:3>di4:4'));
+  assert.ok(!t.some(s => s.key === 'dm7:15>di4:1'));
 });

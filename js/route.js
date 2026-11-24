@@ -5,7 +5,7 @@ import {
   MICROS, devinePhantom, NOMS_DEFAUT,
 } from './data.js';
 import { rj45Nodal } from './baies.js';
-import { ZONES, SYS_RX } from './diffusion.js';
+import { SYS_RX, SYS_OUTS } from './diffusion.js';
 
 export const priseId = (bav, kind, i) => `${bav}:${kind}-${String(i + 1).padStart(2, '0')}`;
 
@@ -59,6 +59,7 @@ export function compute(state) {
   }
   const firstFree = (set, max) => { for (let i = 1; i <= max; i++) if (!set.has(i)) { set.add(i); return i; } return null; };
 
+  let dm7In = 5; const nextDm7In = () => dm7In++;
   inputs.forEach((e, idx) => {
     const n = +e.n || idx + 1;
     const r = { id: e.id, n, source: e.source || `Entrée ${n}`, steps: [], dante: [], warnings: [], ok: true };
@@ -141,11 +142,18 @@ export function compute(state) {
     }
 
     if (danteFrom) {
-      const sub = { rxDev: N.dm7, rxCh: n, txDev: danteFrom.dev, txCh: danteFrom.ch, label: r.source };
-      r.dante.push(sub); res.dante.push(sub);
-      r.steps.push({ lieu: 'Dante', txt: `Dante Controller : coche la case entre ${N.dm7} canal ${n} (récepteur, à gauche) et ${danteFrom.dev} canal ${danteFrom.ch} (émetteur, en haut).` });
-      r.steps.push({ lieu: 'DM7', txt: `Patch d'entrée : canal ${n} ← Dante ${n}.` });
-      res.dm7.push({ n, source: r.source, txt: `Canal ${n} ← Dante ${n}` });
+      // Entrées Dante de la DM7 : 1-4 = ULXD4Q (posé par l'installateur), les autres à partir de 5.
+      const k = route === 'hf' ? danteFrom.ch : nextDm7In();
+      r.dm7In = k;
+      if (route === 'hf') {
+        r.steps.push({ lieu: 'Dante', txt: `Déjà en place (installateur) : ${N.dm7} entrée Dante ${k} ← ${N.ulxd} canal ${k}. Rien à cocher.` });
+      } else {
+        const sub = { rxDev: N.dm7, rxCh: k, txDev: danteFrom.dev, txCh: danteFrom.ch, label: r.source };
+        r.dante.push(sub); res.dante.push(sub);
+        r.steps.push({ lieu: 'Dante', txt: `Dante Controller : coche la case entre ${N.dm7} canal ${k} (récepteur, à gauche) et ${danteFrom.dev} canal ${danteFrom.ch} (émetteur, en haut).` });
+      }
+      r.steps.push({ lieu: 'DM7', txt: `Patch d'entrée : canal ${n} ← Dante ${k}.` });
+      res.dm7.push({ n, source: r.source, txt: `Canal ${n} ← Dante ${k}` });
     }
     if (ph.on && route !== 'hf') res.phantom.push({ n, source: r.source, ou: r.rioCh ? `${N['rio' + r.rio]} entrée ${r.rioCh}` : r.regieIn ? `${N.rioRegie} entrée ${r.regieIn.ch}` : r.dm7Local ? `DM7 entrée locale ${r.dm7Local.ch}` : '?' });
     if (ph.src === 'inconnu' && route !== 'hf') r.warnings.push('Fantôme inconnue : choisis le micro dans « setup ».');
@@ -162,7 +170,7 @@ export function compute(state) {
   // ---------- Sorties ----------
   // Une sortie branchée sur une prise HP déjà prévue par la diffusion système (front fills,
   // retours) reprend le bus et le Dante Out du système. Sinon : un Dante Out libre.
-  const sysOuts = new Set(ZONES.map(z => z.out));
+  const sysOuts = SYS_OUTS;
   let dOut = +(state.settings?.dm7OutStart) || 9;
   const nextOut = () => { while (sysOuts.has(dOut)) dOut++; return dOut++; };
   const usedHP = new Map(), usedRioOut = { 1: new Set(), 2: new Set() };
@@ -176,7 +184,7 @@ export function compute(state) {
     const bus = zone ? zone.bus : (o.mix || 'le mix ' + r.nom);
     r.dm7Out = dmOut; r.zone = zone;
     r.steps.push({ lieu: 'DM7', txt: zone
-      ? `Cette prise fait partie de la diffusion système « ${zone.nom} » : ${zone.bus} → Dante Out ${dmOut}${zone.retour ? `. Prépare le mix de l'artiste dans ${zone.bus}` : ''}.`
+      ? `Cette prise fait partie de la diffusion fixe « ${zone.nom} » : elle écoute le Dante Out ${dmOut} de la DM7 (bus conseillé : ${zone.bus})${zone.retour ? '. Les 4 retours partagent ce même mix' : ''}.`
       : `Patch de sortie : ${bus} → Dante Out ${dmOut}.` });
     if (!zone) res.dm7.push({ n: 'S' + (idx + 1), source: r.nom, txt: `${bus} → Dante Out ${dmOut}` });
     if ((o.route || 'hp') === 'hp') {
