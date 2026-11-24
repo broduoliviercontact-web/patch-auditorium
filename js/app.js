@@ -1,7 +1,9 @@
 import { BOITIERS, MICROS, NOMS_DEFAUT, NOMS_LIBELLES } from './data.js';
 import { compute, prises, phantomDe, micro } from './route.js';
 import { LEARN_HTML } from './learn.js';
-import { renderBaies } from './baies.js';
+import { renderBaies, todayMap } from './baies.js';
+import { rkInfo } from './racks.js';
+let rackZoom = 1, rkSel = null;
 import { renderDante, explain, cellKey } from './dante.js';
 import { ZONES } from './diffusion.js';
 const dui = { expTx: new Set(), expRx: new Set(), show: { sys: true, patch: true }, usedOnly: true, train: false, focus: null };
@@ -191,6 +193,7 @@ function miniPlan(bav) {
 
 function renderDanteTab() { lastSubs = renderDante(document.getElementById('tab-dante'), res, names(), dui, state.train); }
 function renderPanel() {
+  if (!openId && !danteCell && rkSel) { $('#panelBody').innerHTML = rkInfo(rkSel, todayMap(res, names())); $('#panel').hidden = false; return; }
   if (!openId && danteCell) { $('#panelBody').innerHTML = explain(danteCell, lastSubs, res, names()); $('#panel').hidden = false; return; }
   if (!openId) { $('#panel').hidden = true; return; }
   const all = [...res.inputs.map(r => ({ r, kind: 'in' })), ...res.outputs.map(r => ({ r, kind: 'out' })), ...res.net.map(r => ({ r, kind: 'net' }))];
@@ -233,7 +236,7 @@ function renderFiches() {
 function renderAll() {
   $('#artist').value = state.show.artist || ''; $('#date').value = state.show.date || '';
   renderUsage(); renderInputs(); renderOutputs(); renderNet(); renderFiches(); renderPanel();
-  renderBaies(document.getElementById('tab-baies'), res, names(), baie);
+  renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom);
   renderDanteTab();
 }
 
@@ -259,7 +262,9 @@ document.addEventListener('click', ev => {
   const t = ev.target;
   if (t.matches('[data-zoom]')) { $('#imgEl').src = t.src; $('#img').showModal(); return; }
   if (danteClick(t)) return;
-  const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; renderBaies(document.getElementById('tab-baies'), res, names(), baie); return; }
+  const bb = t.closest('[data-baie]'); if (bb) { baie = bb.dataset.baie; renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom); return; }
+  const zr = t.closest('[data-zoom-r]'); if (zr) { const d = +zr.dataset.zoomR; rackZoom = d === 0 ? 1 : Math.min(3, Math.max(.6, rackZoom + d * .4)); renderBaies(document.getElementById('tab-baies'), res, names(), baie, rackZoom); return; }
+  const rk = t.closest('[data-rk]'); if (rk) { rkSel = rk.dataset.rk; openId = null; danteCell = null; renderPanel(); return; }
   const go = t.closest('[data-goto]'); if (go) { const el = document.getElementById('patch-' + go.dataset.goto); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
   const [list, i] = listOf(t); if (!list) return;
   const item = list[i];
@@ -267,11 +272,11 @@ document.addEventListener('click', ev => {
   const act = t.dataset.act;
   if (act === 'ph') { item.phantom = item.phantom == null ? !phantomDe(item).on : item.phantom === true ? false : null; update(); }
   if (act === 'setup') { openSetup.has(item.id) ? openSetup.delete(item.id) : openSetup.add(item.id); renderInputs(); }
-  if (act === 'open') { openId = item.id; danteCell = null; renderPanel(); }
+  if (act === 'open') { openId = item.id; danteCell = null; rkSel = null; renderPanel(); }
   if (act === 'del') { list.splice(i, 1); if (openId === item.id) openId = null; update(); }
 });
-$('#panelClose').onclick = () => { openId = null; danteCell = null; renderPanel(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { openId = null; danteCell = null; renderPanel(); } });
+$('#panelClose').onclick = () => { openId = null; danteCell = null; rkSel = null; renderPanel(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { openId = null; danteCell = null; rkSel = null; renderPanel(); } });
 
 function danteClick(t) {
   const tx = t.closest('[data-tx]'), rx = t.closest('[data-rx]');
@@ -296,7 +301,7 @@ function danteClick(t) {
     else T.add.push(k);
     save(); renderDanteTab();
   }
-  danteCell = cell; openId = null; renderPanel();
+  danteCell = cell; openId = null; rkSel = null; renderPanel();
   return true;
 }
 document.addEventListener('change', ev => {

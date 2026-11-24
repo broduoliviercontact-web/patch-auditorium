@@ -2,6 +2,7 @@
 // avec les cordons du patch en cours. Sources : synoptique (indice 0), photo de la baie nodal
 // (ordre des modules), tableau « Régies Auditorium » (positions en U de la baie régie).
 import { BOITIERS, RIO_PLATEAU } from './data.js';
+import { rackFace, RACKS } from './racks.js';
 
 const range = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const pad = i => String(i).padStart(2, '0');
@@ -193,22 +194,33 @@ export function patchSvg(id, cords) {
   return s + `</svg>`;
 }
 
-export function renderBaies(el, res, names, which) {
-  const used = cordonsParPatch(res, names), baie = BAIES[which];
+export function todayMap(res, names) {
+  const used = cordonsParPatch(res, names), m = new Map();
+  for (const [id, cords] of Object.entries(used)) for (const c of cords) {
+    if (c.fixe && !c.actif) continue;
+    m.set(`${id}:${c.a}`, c.txt + (c.b ? ` (cordon ${c.a} → ${c.b})` : ` (→ ${c.ext})`));
+    if (c.b) m.set(`${id}:${c.b}`, c.txt + ` (cordon ${c.a} → ${c.b})`);
+  }
+  return m;
+}
+
+export function renderBaies(el, res, names, which, zoom = 1) {
+  const used = cordonsParPatch(res, names), baie = BAIES[which], today = todayMap(res, names);
   const patchIds = baie.modules.filter(m => m.patch).map(m => m.patch);
   const actifs = id => (used[id] || []).filter(c => !c.fixe || c.actif).length;
   el.innerHTML = `
     <div class="bar"><span class="seg">${Object.entries(BAIES).map(([k, b]) => `<button data-baie="${k}" class="${k === which ? 'on' : ''}" data-v="bav">${k === 'nodal' ? 'Nodal' : 'Régie'}</button>`).join('')}</span>
-      <span class="hint">${esc(baie.note)} Clique sur un patch pour le voir en détail ; survole un point pour lire son câble.</span></div>
-    <div class="baies">
-      <div class="rackcol"><h3>${esc(baie.nom)}</h3>${rackSvg(baie, used)}</div>
-      <div class="patchcol">${[...patchIds].sort((a, b) => actifs(b) - actifs(a)).map(id => {
+      <span class="seg"><button data-zoom-r="-1" title="Dézoomer">−</button><button data-zoom-r="0" title="Taille normale">${Math.round(zoom * 100)} %</button><button data-zoom-r="1" title="Zoomer">+</button></span>
+      <span class="hint">${esc(RACKS[which].source)} Touche un port ou une colonne pour lire son étiquette et son câble ; les points à brancher aujourd'hui sont entourés en orange.</span></div>
+    <h3 style="margin:4px 0 8px">${esc(RACKS[which].nom)}</h3>
+    <div class="rackwrap"><div style="width:${Math.round(1000 * zoom)}px;max-width:${zoom <= 1 ? '100%' : 'none'}">${rackFace(which, today)}</div></div>
+    <h3 style="margin:18px 0 8px">Patchs en détail</h3>
+    <div class="patchcol">${[...patchIds].sort((a, b) => actifs(b) - actifs(a)).map(id => {
         const cords = used[id] || [], act = cords.filter(c => !c.fixe || c.actif);
         if (!act.length) return `<details class="patchcard" id="patch-${id}"><summary><b>${esc(PATCHES[id].nom)}</b> <span class="hint">· rien à poser, clic pour voir le patch</span></summary><div class="scroll">${patchSvg(id, cords)}</div></details>`;
         return `<div class="patchcard" id="patch-${id}"><h3>${esc(PATCHES[id].nom)}${act.length ? ` <span class="chip">${act.length} cordon${act.length > 1 ? 's' : ''}</span>` : ''}</h3>
           <div class="scroll">${patchSvg(id, cords)}</div>
-          ${act.length ? `<table class="cordlist">${act.map(c => { const i = cords.indexOf(c); return `<tr><td><span class="dot" style="background:${CORD[i % CORD.length]}"></span></td><td><b>${esc(c.a)}</b> → <b>${esc(c.b || c.ext)}</b></td><td>${esc(c.txt)}</td><td class="hint">câble ${PATCHES[id].points[c.a] ?? '?'}${labelCable(PATCHES[id].points[c.a]) ? ' · ' + esc(labelCable(PATCHES[id].points[c.a])) : ''}</td></tr>`; }).join('')}</table>` : `<p class="hint">Aucun cordon à poser sur ce patch pour ce patch d'artiste.</p>`}
+          ${act.length ? `<table class="cordlist">${act.map(c => { const i = cords.indexOf(c); return `<tr><td><span class="dot" style="background:${CORD[i % CORD.length]}"></span></td><td><b>${esc(c.a)}</b> → <b>${esc(c.b || c.ext)}</b></td><td>${esc(c.txt)}</td><td class="hint">câble ${PATCHES[id].points[c.a] ?? '?'}${labelCable(PATCHES[id].points[c.a]) ? ' · ' + esc(labelCable(PATCHES[id].points[c.a])) : ''}</td></tr>`; }).join('')}</table>` : ''}
         </div>`;
-      }).join('')}</div>
-    </div>`;
+      }).join('')}</div>`;
 }
