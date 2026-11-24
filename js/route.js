@@ -110,7 +110,7 @@ export function compute(state) {
           if (!L) { r.ok = false; r.warnings.push('Les 24 liaisons nodal → régie sont toutes prises.'); }
           else {
             usedLiaison.add(L.cable); res.usage.liaisons++; r.liaison = L; r.g1 = G1[p.cable];
-            r.steps.push({ lieu: 'Nodal', txt: `Ghielmetti 1 : cordon de ${G1[p.cable]} (ligne ${p.cable}) vers ${L.g1} (liaison ${L.cable} vers la régie).` });
+            r.steps.push({ lieu: 'Nodal', txt: `Ghielmetti 1 : retire les bouchons des colonnes ${G1[p.cable].slice(1)} et ${L.g1.slice(1)} (sinon les lignes d'en face restent reliées), puis pose un cordon de ${G1[p.cable]} (${p.bav} ${p.nom}, câble ${p.cable}) vers ${L.g1} (liaison ${L.cable} vers la régie, « Régie Spectacle »). Remets les bouchons après le spectacle.` });
             res.cordons.nodal.push({ n, source: r.source, de: G1[p.cable], vers: L.g1, txt: `${p.bav} ${p.nom} → liaison ${L.cable}` });
             arrivee = { point: L.g2, via: `la liaison ${L.cable} arrive en ${L.g2}` };
           }
